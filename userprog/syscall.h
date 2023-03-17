@@ -36,8 +36,12 @@
 #define SC_ThreadJoin   15
 
 // i define
-#define SC_Send 44
-#define SC_Receive 45
+#define SC_SocketTCP 45
+#define SC_Connect 46
+#define SC_Send 47
+#define SC_SReceive 48
+#define SC_SClose 49
+
 // #define SC_ConsoleRead 40
 // #define SC_ConsoleWrite 41
 // #define SC_ConsoleReadLine 42
@@ -68,10 +72,15 @@
 void Halt();
 
 
+/*
+    Socket 
+*/
+int SocketTCP();
+int Connect(int socketID, char* ip, int port);
+int Send(int socketID, char* buffer, int len);
+int SReceive(int socketID, char* buffer, int len);
+int SClose(int socketID);
 
-int Send(int farHost, char* data, int len);
-
-int Receive();
 
 /*
  * Add the two operants and return the result
@@ -119,8 +128,6 @@ int Join(SpaceId id);
  /* A unique identifier for an open Nachos file. */
 typedef int OpenFileId;
 
- /* A unique identifier for an open Nachos socket. */
-typedef int OpenSocketID;
 
 /* when an address space starts up, it has two open files, representing
  * keyboard input and display output (in UNIX terms, stdin and stdout).

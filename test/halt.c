@@ -13,6 +13,6 @@
 #include "../userprog/syscall.h"
 
 int main(){
-    Receive();
+    // Receive();
     Exit(0);
 }

@@ -27,8 +27,9 @@
 #include "syscall.h"
 #include "ksyscall.h"
 #include "helper.h"
-#include "post.h"
-#include <sys/socket.h>
+
+#include "sys_socket.h"
+
 
 
 
@@ -58,7 +59,7 @@
 
 const int MAX_OPEN_FILES = 20;
 static pair<OpenFile*, int> FileDescriptor[MAX_OPEN_FILES];
-static int OpenSocket[20]{ -1, -1, -1 };
+
 
 void ExceptionHandler(ExceptionType which) {
     int type = kernel->machine->ReadRegister(2);
@@ -94,34 +95,34 @@ void ExceptionHandler(ExceptionType which) {
             break;
         }
 
-        case SC_Send: {
-            DEBUG(dbgSys, "Send message to a nachos machine.");
-            int to = kernel->machine->ReadRegister(4);
-            int vAddr = kernel->machine->ReadRegister(5);
-            int size = kernel->machine->ReadRegister(6);
-            char* data = new char[size + 1];
-            ASSERT(readFromMem(data, size, vAddr));
-            PacketHeader pkt;
-            MailHeader mhdr;
-            pkt.to = to;
-            mhdr.from = 0;
-            mhdr.to = 1;
-            mhdr.length = size + 1;
-            kernel->postOfficeOut->Send(pkt, mhdr, data);
-            delete[] data;
-            return advancePC();
-        }
+                    // case SC_Send: {
+                    //     DEBUG(dbgSys, "Send message to a nachos machine.");
+                    //     int to = kernel->machine->ReadRegister(4);
+                    //     int vAddr = kernel->machine->ReadRegister(5);
+                    //     int size = kernel->machine->ReadRegister(6);
+                    //     char* data = new char[size + 1];
+                    //     ASSERT(readFromMem(data, size, vAddr));
+                    //     PacketHeader pkt;
+                    //     MailHeader mhdr;
+                    //     pkt.to = to;
+                    //     mhdr.from = 0;
+                    //     mhdr.to = 1;
+                    //     mhdr.length = size + 1;
+                    //     kernel->postOfficeOut->Send(pkt, mhdr, data);
+                    //     delete[] data;
+                    //     return advancePC();
+                    // }
 
-        case SC_Receive: {
-            DEBUG(dbgSys, "Read message.");
-            PacketHeader pkt;
-            MailHeader mhdr;
-            char buffer[MaxMailSize];
-            kernel->postOfficeIn->Receive(1, &pkt, &mhdr, buffer);
-            cout << buffer << endl;
+                    // case SC_Receive: {
+                    //     DEBUG(dbgSys, "Read message.");
+                    //     PacketHeader pkt;
+                    //     MailHeader mhdr;
+                    //     char buffer[MaxMailSize];
+                    //     kernel->postOfficeIn->Receive(1, &pkt, &mhdr, buffer);
+                    //     cout << buffer << endl;
 
-            return advancePC();
-        }
+                    //     return advancePC();
+                    // }
 
 
         case SC_Remove: {
@@ -304,7 +305,7 @@ void ExceptionHandler(ExceptionType which) {
                 DEBUG(dbgSys, "Write " << data << " to file " << fileId);
                 OpenFile* file = FileDescriptor[fileId].first;
                 if (file && FileDescriptor[fileId].second == READ_WRITE) {
-                    int result = file->Write(dataP, size);
+                    int result = file->Write(data, size);
                     DEBUG(dbgSys, "Successfully write " << result << " bytes");
                     kernel->machine->WriteRegister(2, result);
                 }
@@ -356,6 +357,80 @@ void ExceptionHandler(ExceptionType which) {
                      //     delete[] temp;
                      //     return advancePC();
                      // }
+        case SC_SocketTCP:
+        {
+            DEBUG(dbgSys, "Create socket.");
+            int id = SYS_SocketTCP();
+            if (id == -1)
+                kernel->machine->WriteRegister(2, -1);
+            return advancePC();
+        }
+
+        // int Connect(int socketID, char* ip, int port)
+        case SC_Connect:
+        {
+            DEBUG(dbgSys, "Connect to server.");
+            // SocketId Id = kernel->machine->ReadRegister(4);
+            // int port = kernel->machine->ReadRegister(5);
+            int socketID = kernel->machine->ReadRegister(4);
+            int vAddr = kernel->machine->ReadRegister(5);
+            int port = kernel->machine->ReadRegister(6);
+            char* ip = new char[MAX_IP_ADDR_SIZE];
+            bzero(ip, MAX_IP_ADDR_SIZE);
+            ASSERT(readMemUntil(ip, vAddr, '\0', MAX_IP_ADDR_SIZE));
+            cout << ip << endl;
+            cout << port << endl;
+            int result = SYS_SocketConnect(socketID, ip, port);
+            kernel->machine->WriteRegister(2, result);
+            delete[] ip;
+            cout << "END" << endl;
+            return advancePC();
+        }
+        case SC_Send:
+        {
+            int socketID = kernel->machine->ReadRegister(4);
+            int vAddr = kernel->machine->ReadRegister(5);
+            int len = kernel->machine->ReadRegister(6);
+            char* buffer = (char*)malloc(len + 1);
+            bzero(buffer, len + 1);
+
+            ASSERT(readFromMem(buffer, len, vAddr))
+            cout << "Bfu: " << buffer << endl;
+            int result = SYS_SocketSend(socketID, buffer, len);
+            kernel->machine->WriteRegister(2, result);
+
+            free(buffer);
+            return advancePC();
+        }
+
+        case SC_SReceive:
+        {
+            int socketID = kernel->machine->ReadRegister(4);
+            int vAddr = kernel->machine->ReadRegister(5);
+            int len = kernel->machine->ReadRegister(6);
+            char* buffer = (char*)malloc(len);
+            int result = SYS_SocketReceive(socketID, buffer, len);
+            kernel->machine->WriteRegister(2, result);
+
+            ASSERT(writeToMem(buffer, len, vAddr));
+            free(buffer);
+            return advancePC();
+        }
+
+
+        case SC_SClose:
+        {
+            int socketID = kernel->machine->ReadRegister(4);
+            int status = SYS_SocketClose(socketID);
+            if (status < 0)
+                kernel->machine->WriteRegister(2, -1);
+            else
+                kernel->machine->WriteRegister(2, 0);
+            return advancePC();
+        }
+
+
+
         case SC_Add:
             DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
 

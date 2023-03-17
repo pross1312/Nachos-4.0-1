@@ -182,6 +182,23 @@ ThreadJoin:
 	j 	$31
 	.end ThreadJoin
 
+	.globl SocketTCP
+	.ent	SocketTCP
+SocketTCP:
+	addiu $2,$0,SC_SocketTCP
+	syscall
+	j	$31
+	.end SocketTCP
+
+	.globl Connect
+	.ent	Connect
+Connect:
+	addiu $2,$0,SC_Connect
+	syscall
+	j	$31
+	.end Connect
+
+
 	.globl Send
 	.ent	Send
 Send:
@@ -190,13 +207,13 @@ Send:
 	j	$31
 	.end Send
 
-	.globl Receive
-	.ent	Receive
-Receive:
-	addiu $2,$0,SC_Receive
+	.globl SReceive
+	.ent	SReceive
+SReceive:
+	addiu $2,$0,SC_SReceive
 	syscall
 	j	$31
-	.end Receive
+	.end SReceive
 
 
 
