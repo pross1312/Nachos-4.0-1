@@ -215,6 +215,21 @@ SReceive:
 	j	$31
 	.end SReceive
 
+	.globl SClose
+	.ent	SClose
+SClose:
+	addiu $2,$0,SC_SClose
+	syscall
+	j	$31
+	.end SClose
+
+	.globl ConsoleReadLine
+	.ent	ConsoleReadLine
+ConsoleReadLine:
+	addiu $2,$0,SC_ConsoleReadLine
+	syscall
+	j	$31
+	.end ConsoleReadLine
 
 
 /* dummy function to keep gcc happy */

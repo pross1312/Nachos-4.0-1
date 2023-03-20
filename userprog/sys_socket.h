@@ -31,20 +31,14 @@ int SYS_SocketTCP() {
             index = i;
             break;
         }
-
     // no position
     if (index == -1)
         return -1;
-
-
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
         return -1;
-
-
     DEBUG(dbgSys, "Create successfully socket at " << index << ", socket: " << sock << ".");
     OpenSocketID[index] = sock;
-    cout << "END" << endl;
     return index;
 }
 
@@ -54,13 +48,10 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
     memset(&server_addr, 0, sizeof(sockaddr_in));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    cout << ip << endl;
     if (inet_pton(AF_INET, ip, &server_addr.sin_addr) <= 0) {
-        cout << "ERROR" << endl;
-        exit(1);
+        DEBUG(dbgSys, "Can't parse ip address.");
+        return -1;
     }
-
-
     if (connect(OpenSocketID[socketID], (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         DEBUG(dbgSys, "Can't connect to server.");
         return -1;
@@ -70,7 +61,7 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
 }
 
 int SYS_SocketSend(int socketID, char* buffer, int len) {
-    cout << buffer << endl;
+    DEBUG(dbgSys, "Send: " << buffer << " through socket fd: " << OpenSocketID[socketID]);
     int n = write(OpenSocketID[socketID], buffer, len);
     if (n < 0) {
         return -1;
@@ -78,20 +69,23 @@ int SYS_SocketSend(int socketID, char* buffer, int len) {
     else if (n == 0) {
         return 0;
     }
-    DEBUG(dbgSys, "Sented.");
+    DEBUG(dbgSys, n << " bytes sent.");
     return n;
 }
 
 int SYS_SocketReceive(int socketID, char* buffer, int len) {
+    DEBUG(dbgSys, "Read message from socket fd: " << OpenSocketID[socketID]);
     int n = read(OpenSocketID[socketID], buffer, len);
     if (n < 0)
         return -1;
     else if (n == 0)
         return 0;
+
     return n;
 }
 
 int SYS_SocketClose(int socketID) {
+    DEBUG(dbgSys, "Close socket fd: " << OpenSocketID[socketID]);
     int result = close(OpenSocketID[socketID]);
     OpenSocketID[socketID] = 0;
     return result;

@@ -35,17 +35,15 @@
 #define SC_ThreadExit   14
 #define SC_ThreadJoin   15
 
-// i define
+// -------------------------------------------------------
+
+#define SC_ConsoleReadLine 42
 #define SC_SocketTCP 45
 #define SC_Connect 46
 #define SC_Send 47
 #define SC_SReceive 48
 #define SC_SClose 49
 
-// #define SC_ConsoleRead 40
-// #define SC_ConsoleWrite 41
-// #define SC_ConsoleReadLine 42
-// #define SC_ConsoleWriteLine 43
 #define SC_Add		39
 
 #ifndef IN_ASM
@@ -72,6 +70,7 @@
 void Halt();
 
 
+int ConsoleReadLine(char* buffer, int maxSize);
 /*
     Socket 
 */

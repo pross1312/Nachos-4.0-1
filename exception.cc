@@ -124,7 +124,6 @@ void ExceptionHandler(ExceptionType which) {
             ASSERT(fileId > 1 && fileId < MAX_OPEN_FILES);
             OpenFile* file = FileDescriptor[fileId].first;
 
-#ifdef FILESYS_STUB
             int length = file->Length();
             DEBUG(dbgSys, "Length file: " << length << " seek position: " << position);
             if (position > length || position < -1)
@@ -135,7 +134,6 @@ void ExceptionHandler(ExceptionType which) {
                 file->Seek(position);
                 kernel->machine->WriteRegister(2, position);
             }
-#endif  
             return advancePC();
         }
 

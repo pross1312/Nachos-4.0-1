@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     memset(sendbuff, '0', 256);
 
 
-    
+
     //Thiet lap dia chi server
     serv_addr.sin_family = AF_INET;       //default
     serv_addr.sin_port = htons(portno);      //port number
@@ -59,17 +59,17 @@ int main(int argc, char* argv[]) {
     listen(sockfd, 5);    //Toi da 5 backlog trong hang doi
 
     len = sizeof(client_addr); //Dung de lay thong tin dia chi client ket noi den
-
+    printf("Server is listening at port %d\n", portno);
+    newsockfd = accept(sockfd, (struct sockaddr*)&client_addr, (socklen_t*)&len);
+    if (newsockfd < 0)
+    {
+        printf("ERROR on accept");
+        return 1;
+    }
 
     //Server su dung mot vong lap de lien tuc nghe va phuc vu client ket noi den
     while (1) {
-        printf("Server is listening at port %d\n", portno);
-        newsockfd = accept(sockfd, (struct sockaddr*)&client_addr, (socklen_t*)&len);
-        if (newsockfd < 0)
-        {
-            printf("ERROR on accept");
-            continue;
-        }
+
         char s[255]; //Chua thong tin dia chi client ket noi den
         inet_ntop(client_addr.sin_family, (struct sockaddr*)&client_addr, s, sizeof s);
         printf("server: got connection from %s\n", s);

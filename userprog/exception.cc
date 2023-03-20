@@ -94,37 +94,6 @@ void ExceptionHandler(ExceptionType which) {
             ASSERTNOTREACHED();
             break;
         }
-
-                    // case SC_Send: {
-                    //     DEBUG(dbgSys, "Send message to a nachos machine.");
-                    //     int to = kernel->machine->ReadRegister(4);
-                    //     int vAddr = kernel->machine->ReadRegister(5);
-                    //     int size = kernel->machine->ReadRegister(6);
-                    //     char* data = new char[size + 1];
-                    //     ASSERT(readFromMem(data, size, vAddr));
-                    //     PacketHeader pkt;
-                    //     MailHeader mhdr;
-                    //     pkt.to = to;
-                    //     mhdr.from = 0;
-                    //     mhdr.to = 1;
-                    //     mhdr.length = size + 1;
-                    //     kernel->postOfficeOut->Send(pkt, mhdr, data);
-                    //     delete[] data;
-                    //     return advancePC();
-                    // }
-
-                    // case SC_Receive: {
-                    //     DEBUG(dbgSys, "Read message.");
-                    //     PacketHeader pkt;
-                    //     MailHeader mhdr;
-                    //     char buffer[MaxMailSize];
-                    //     kernel->postOfficeIn->Receive(1, &pkt, &mhdr, buffer);
-                    //     cout << buffer << endl;
-
-                    //     return advancePC();
-                    // }
-
-
         case SC_Remove: {
             int vAddr = kernel->machine->ReadRegister(4);
             static char fileName[MAX_OPEN_FILE_NAME];
@@ -322,84 +291,62 @@ void ExceptionHandler(ExceptionType which) {
             delete[] data;
             return advancePC();
         }
-                     // case SC_ConsoleReadLine: {
-                     //     DEBUG(dbgSys, "Read a line from console into a char array.");
-                     //     int virAddr = kernel->machine->ReadRegister(4);
-                     //     int maxSize = kernel->machine->ReadRegister(5);
-                     //     char* temp = new char[maxSize] {};
-                     //     // cin.getline(temp, maxSize, '\n');
-                     //     int i;
-                     //     for (i = 0; i < maxSize; i++) {
-                     //         char c = kernel->synchConsoleIn->GetChar();
-                     //         if (c == EOF || c == '\n')
-                     //             break;
-                     //         temp[i] = c;
-                     //     }
-                     //     if (writeToMem(temp, strlen(temp), virAddr))
-                     //         kernel->machine->WriteRegister(2, i);
-                     //     else
-                     //         kernel->machine->WriteRegister(2, -1);
-                     //     delete[] temp;
-                     //     return advancePC();
-                     // }
 
-                     // case SC_ConsoleWriteLine: {
-                     //     DEBUG(dbgSys, "Write char array on a line.");
-                     //     int vAddr = kernel->machine->ReadRegister(4);
-                     //     int size = kernel->machine->ReadRegister(5);
-                     //     char* temp = new char[size];
-                     //     if (readFromMem(temp, size, vAddr)) {
-
-
-                     //     }
-                     //     else
-                     //         kernel->machine->WriteRegister(2, -1);
-                     //     delete[] temp;
-                     //     return advancePC();
-                     // }
-        case SC_SocketTCP:
-        {
-            DEBUG(dbgSys, "Create socket.");
-            int id = SYS_SocketTCP();
-            if (id == -1)
+        case SC_ConsoleReadLine: {
+            DEBUG(dbgSys, "Read a line from console into a char array.");
+            int virAddr = kernel->machine->ReadRegister(4);
+            int maxSize = kernel->machine->ReadRegister(5);
+            char* temp = new char[maxSize+1];
+            bzero(temp, maxSize+1);
+            int i;
+            for (i = 0; i < maxSize+1; i++) {
+                char c = kernel->synchConsoleIn->GetChar();
+                if (c == EOF || c == '\n')
+                    break;
+                temp[i] = c;
+            }
+            if (writeToMem(temp, strlen(temp), virAddr))
+                kernel->machine->WriteRegister(2, i);
+            else
                 kernel->machine->WriteRegister(2, -1);
+            delete[] temp;
             return advancePC();
         }
 
-        // int Connect(int socketID, char* ip, int port)
-        case SC_Connect:
-        {
+        case SC_SocketTCP: {
+            DEBUG(dbgSys, "Create socket.");
+            int id = SYS_SocketTCP();
+            kernel->machine->WriteRegister(2, id);
+            return advancePC();
+        }
+
+        case SC_Connect: {
             DEBUG(dbgSys, "Connect to server.");
-            // SocketId Id = kernel->machine->ReadRegister(4);
-            // int port = kernel->machine->ReadRegister(5);
             int socketID = kernel->machine->ReadRegister(4);
             int vAddr = kernel->machine->ReadRegister(5);
             int port = kernel->machine->ReadRegister(6);
             char* ip = new char[MAX_IP_ADDR_SIZE];
             bzero(ip, MAX_IP_ADDR_SIZE);
             ASSERT(readMemUntil(ip, vAddr, '\0', MAX_IP_ADDR_SIZE));
-            cout << ip << endl;
-            cout << port << endl;
             int result = SYS_SocketConnect(socketID, ip, port);
             kernel->machine->WriteRegister(2, result);
             delete[] ip;
-            cout << "END" << endl;
             return advancePC();
         }
         case SC_Send:
         {
-            int socketID = kernel->machine->ReadRegister(4);
+            DEBUG(dbgSys, "Send message to server.")
+                int socketID = kernel->machine->ReadRegister(4);
             int vAddr = kernel->machine->ReadRegister(5);
             int len = kernel->machine->ReadRegister(6);
-            char* buffer = (char*)malloc(len + 1);
-            bzero(buffer, len + 1);
+            char* buffer = new char[len];
+            bzero(buffer, len);
 
             ASSERT(readFromMem(buffer, len, vAddr))
-            cout << "Bfu: " << buffer << endl;
-            int result = SYS_SocketSend(socketID, buffer, len);
+                int result = SYS_SocketSend(socketID, buffer, len);
             kernel->machine->WriteRegister(2, result);
 
-            free(buffer);
+            delete[] buffer;
             return advancePC();
         }
 
@@ -408,12 +355,12 @@ void ExceptionHandler(ExceptionType which) {
             int socketID = kernel->machine->ReadRegister(4);
             int vAddr = kernel->machine->ReadRegister(5);
             int len = kernel->machine->ReadRegister(6);
-            char* buffer = (char*)malloc(len);
+            char* buffer = new char[len];
             int result = SYS_SocketReceive(socketID, buffer, len);
             kernel->machine->WriteRegister(2, result);
 
             ASSERT(writeToMem(buffer, len, vAddr));
-            free(buffer);
+            delete[] buffer;
             return advancePC();
         }
 
