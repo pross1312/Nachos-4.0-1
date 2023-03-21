@@ -13,6 +13,21 @@
 #include "../userprog/syscall.h"
 
 int main(){
-    // Receive();
-    Exit(0);
+    if (Create("Hello.txt") == 0) {
+        int id = Open("Hello.txt", READ_WRITE);
+        int count = Write("Toi la tuong\n", 14, id);
+        if (count != -1) {
+            char buffer[20];
+            int s = Seek(3, id);
+            int read_count = Read(buffer, count, id);
+            if (read_count != -1) {
+                int check = Write(buffer, read_count, Console_Output);
+            }
+        }
+        
+        Close(id);
+        Remove("Hello.txt");
+    }
+
+    return 0;
 }

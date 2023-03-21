@@ -151,6 +151,7 @@ int Remove(char* name);
  */
 const int READ_ONLY = 0;
 const int READ_WRITE = 1;
+const int SOCKET = 2;
 
 OpenFileId Open(char* name, int type);
 

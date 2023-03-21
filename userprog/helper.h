@@ -19,21 +19,26 @@ bool readMemUntil(char* buffer, int vAddr, char end, int size) {
 
 bool readFromMem(char* buffer, int size, int virAddr) {
     int idx = 0;
-    while (size / 4 != 0) {
-        if (!kernel->machine->ReadMem(virAddr + idx, 4, (int*)(buffer + idx)))
+    // memcpy(buffer, kernel->machine->mainMemory + virAddr, size);
+    int data = 0;
+    while (size >= 4) {
+        if (!kernel->machine->ReadMem(virAddr + idx, 4, &data))
             return false;
+        memcpy(buffer + idx, &data, 4);
         size -= 4;
         idx += 4;
     }
-    while (size / 2 != 0) {
-        if (!kernel->machine->ReadMem(virAddr + idx, 2, (int*)(buffer + idx)))
+    while (size >= 2) {
+        if (!kernel->machine->ReadMem(virAddr + idx, 2, &data))
             return false;
+        memcpy(buffer + idx, &data, 2);
         size -= 2;
         idx += 2;
     }
-    while (size > 0) {
-        if (!kernel->machine->ReadMem(virAddr + idx, 1, (int*)(buffer + idx)))
+    while (size >= 1) {
+        if (!kernel->machine->ReadMem(virAddr + idx, 1, &data))
             return false;
+        memcpy(buffer + idx, &data, 1);
         size -= 1;
         idx += 1;
     }
@@ -50,20 +55,25 @@ void advancePC() {
 
 bool writeToMem(char* buffer, int size, int virAddr) {
     int count = 0;
-    while (size / 4 != 0) {
-        if (!kernel->machine->WriteMem(virAddr + count, 4, *(int*)(buffer + count)))
+    // memcpy(kernel->machine->mainMemory + virAddr, buffer, size);
+    int data = 0;
+    while (size >= 4) {
+        memcpy(&data, buffer + count, 4);
+        if (!kernel->machine->WriteMem(virAddr + count, 4, data))
             return false;
         size -= 4;
         count += 4;
     }
-    while (size / 2 != 0) {
-        if (!kernel->machine->WriteMem(virAddr + count, 2, *(int*)(buffer + count)))
+    while (size >= 2) {
+        memcpy(&data, buffer + count, 2);
+        if (!kernel->machine->WriteMem(virAddr + count, 2, data))
             return false;
         size -= 2;
         count += 2;
     }
-    while (size != 0) {
-        if (!kernel->machine->WriteMem(virAddr + count, 1, *(int*)(buffer + count)))
+    while (size >= 1) {
+        memcpy(&data, buffer + count, 1);
+        if (!kernel->machine->WriteMem(virAddr + count, 1, data))
             return false;
         size -= 1;
         count += 1;
