@@ -185,6 +185,22 @@ void ExceptionHandler(ExceptionType which) {
                         }
                     cerr << "System error: no available space to open file." << endl;
                     return advancePC();
+                }else{
+                    kernel->fileSystem->Create(fileName);
+                    OpenFile* file = kernel->fileSystem->Open(fileName);
+                    if (file) {
+                        // start from 2 as 0 and 1 are for console input and output
+                        for (int i = 2; i < MAX_OPEN_FILES; i++)
+                            if (FileDescriptor[i].first == NULL) {
+                                FileDescriptor[i].first = file;
+                                FileDescriptor[i].second = type;
+                                kernel->machine->WriteRegister(2, i);
+                                DEBUG(dbgSys, "Open successfully file " << fileName << " --- id: " << i);
+                                return advancePC();
+                            }
+                        cerr << "System error: no available space to open file." << endl;
+                        return advancePC();
+                    }
                 }
             }
             cout << "Fail to open file " << fileName << "." << endl;
