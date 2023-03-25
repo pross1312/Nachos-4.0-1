@@ -23,14 +23,40 @@
 #include "copyright.h"
 #include "utility.h"
 #include "sysdep.h"
+#define FILESYS_STUB
 
 #ifdef FILESYS_STUB			// Temporarily implement calls to 
                     // Nachos file system as calls to UNIX!
                     // See definitions listed under #else
+#include "syscall.h"
+#include <unistd.h>
+
+
 class OpenFile {
 public:
-    OpenFile(int f) { file = f; currentOffset = 0; }	// open the file
-    ~OpenFile() { Close(file); }			// close the file
+    // open the file
+    OpenFile(int f) {
+        file = f;
+        currentOffset = 0;
+        _type = READ_WRITE;
+        absolutePath = NULL;
+    }
+
+    OpenFile(int f, int t, const char* name) {
+        file = f;
+        _type = t;
+        currentOffset = 0;
+        if (t != SOCKET) {
+            absolutePath = realpath(name, NULL);
+            cout << absolutePath << endl;
+        }
+    }
+    // close the file
+    ~OpenFile() {
+        Close(file);
+        delete[] absolutePath;
+        absolutePath = NULL;
+    }
 
     int ReadAt(char* into, int numBytes, int position) {
         Lseek(file, position, 0);
@@ -42,25 +68,43 @@ public:
         return numBytes;
     }
     int Read(char* into, int numBytes) {
-        int numRead = ReadAt(into, numBytes, currentOffset);
+        int numRead = -1;
+        if (_type != SOCKET)
+            numRead = ReadAt(into, numBytes, currentOffset);
+        else
+            numRead = read(file, into, numBytes);
         currentOffset += numRead;
         return numRead;
     }
     int Write(char* from, int numBytes) {
-        int numWritten = WriteAt(from, numBytes, currentOffset);
+
+        int numWritten = -1;
+        if (_type == READ_ONLY)
+            return -1;
+        else if (_type == SOCKET)
+            numWritten = write(file, from, numBytes);
+        else
+            numWritten = WriteAt(from, numBytes, currentOffset);
         currentOffset += numWritten;
         return numWritten;
     }
 
     int Length() { Lseek(file, 0, 2); return Tell(file); }
-
-    // to implement seek and socket...
+    int type() { return _type; }
+    const char* filePath() { return absolutePath; }
     int getFileDescriptor() { return file; }
-    void Seek(int position) { currentOffset = position; }
+    int Seek(int position) {
+        if (_type == SOCKET)
+            return -1;
+        currentOffset = position;
+        return currentOffset;
+    }
 
 private:
     int file;
     int currentOffset;
+    char* absolutePath;
+    int _type;
 };
 
 #else // FILESYS

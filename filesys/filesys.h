@@ -51,6 +51,14 @@ public:
 		Close(fileDescriptor);
 		return TRUE;
 	}
+    OpenFile* Open(char* name, int t) {
+        if (t == SOCKET)
+            return NULL;
+        int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+		if (fileDescriptor == -1) return NULL;
+		return new OpenFile(fileDescriptor, t, name);
+    }
 
 	OpenFile* Open(char* name) {
 		int fileDescriptor = OpenForReadWrite(name, FALSE);
