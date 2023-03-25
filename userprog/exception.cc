@@ -187,20 +187,22 @@ void ExceptionHandler(ExceptionType which) {
             DEBUG(dbgSys, "Read a line from console into a char array.");
             int virAddr = kernel->machine->ReadRegister(4);
             int maxSize = kernel->machine->ReadRegister(5);
-            char* temp = new char[maxSize + 1];
-            bzero(temp, maxSize + 1);
+            char* buffer = new char[maxSize + 1];
+            bzero(buffer, maxSize + 1);
             int i;
             for (i = 0; i < maxSize + 1; i++) {
                 char c = kernel->synchConsoleIn->GetChar();
-                if (c == EOF || c == '\n')
+                if (c == EOF || c == '\n') {
+                    buffer[i] = '\0';
                     break;
-                temp[i] = c;
+                }
+                buffer[i] = c;
             }
-            if (writeToMem(temp, strlen(temp), virAddr))
+            if (writeToMem(buffer, maxSize, virAddr))
                 kernel->machine->WriteRegister(2, i);
             else
                 kernel->machine->WriteRegister(2, -1);
-            delete[] temp;
+            delete[] buffer;
             return advancePC();
         }
 
