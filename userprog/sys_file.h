@@ -6,6 +6,8 @@ const int MAX_OPEN_FILES = 20;
 
 int findEmptySlot();
 
+
+bool isOpen(char* name);
 int SYS_Create(char* name);
 int SYS_Remove(char* name);
 

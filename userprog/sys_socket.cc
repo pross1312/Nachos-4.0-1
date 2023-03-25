@@ -1,11 +1,58 @@
 #include "sys_socket.h"
 #include "sys_file.h"
 
-extern pair<OpenFile*, int> FileDescriptor[MAX_OPEN_FILES];
+// extern pair<OpenFile*, int> FileDescriptor[MAX_OPEN_FILES];
 
-// namespace {
-//     static int OpenSocketID[20];
+// // namespace {
+// //     static int OpenSocketID[20];
+// // }
+
+// int SYS_SocketTCP() {
+//     int sock;
+//     int index = findEmptySlot();
+//     // find position for to store
+//     // no position
+//     if (index == -1)
+//         return -1;
+//     sock = socket(AF_INET, SOCK_STREAM, 0);
+//     if (sock < 0)
+//         return -1;
+//     DEBUG(dbgSys, "Create successfully socket at " << index << ", socket: " << sock << ".");
+// #ifdef FILESYS_STUB
+//     FileDescriptor[index].first = new OpenFile(sock);
+//     FileDescriptor[index].second = SOCKET;
+// #else
+//     cerr << "Error: FILESYS_STUB is not defined" << endl;
+// #endif
+//     return index;
 // }
+
+// int SYS_SocketConnect(int socketID, char* ip, int port) {
+//     struct sockaddr_in server_addr;
+//     memset(&server_addr, 0, sizeof(sockaddr_in));
+//     server_addr.sin_family = AF_INET;
+//     server_addr.sin_port = htons(port);
+//     if (inet_pton(AF_INET, ip, &server_addr.sin_addr) <= 0) {
+//         DEBUG(dbgSys, "Can't parse ip address.");
+//         return -1;
+//     }
+// #ifdef FILESYS_STUB
+//     if (connect(FileDescriptor[socketID].first->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+//         DEBUG(dbgSys, "Can't connect to server.");
+//         return -1;
+//     }
+// #else
+//     cerr << "Error: FILESYS_STUB is not defined" << endl;
+//     return -1;
+// #endif
+
+//     DEBUG(dbgSys, "Connect successfully socket at id: " << socketID);
+//     return 0;
+// }
+
+
+
+extern OpenFile* FileDescriptor[MAX_OPEN_FILES];
 
 int SYS_SocketTCP() {
     int sock;
@@ -19,8 +66,7 @@ int SYS_SocketTCP() {
         return -1;
     DEBUG(dbgSys, "Create successfully socket at " << index << ", socket: " << sock << ".");
 #ifdef FILESYS_STUB
-    FileDescriptor[index].first = new OpenFile(sock);
-    FileDescriptor[index].second = SOCKET;
+    FileDescriptor[index] = new OpenFile(sock, SOCKET, NULL);
 #else
     cerr << "Error: FILESYS_STUB is not defined" << endl;
 #endif
@@ -37,7 +83,7 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
         return -1;
     }
 #ifdef FILESYS_STUB
-    if (connect(FileDescriptor[socketID].first->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (connect(FileDescriptor[socketID]->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         DEBUG(dbgSys, "Can't connect to server.");
         return -1;
     }
