@@ -14,8 +14,15 @@ int main() {
     while (1) {
         char buffer[100];
         int count = ConsoleReadLine(buffer, 100);
-        if (Write(buffer, count, id) <= 0)
+        if (count <= 0) {
+            Close(id);
+            Write("Close connection.\n", 18, Console_Output);
             break;
+        }
+        Write(buffer, count, id);
+        count = Read(buffer, 99, id);
+        Write("Sever sent: ", 12, Console_Output);
+        Write(buffer, count, Console_Output);
     }
     
     Close(id);
