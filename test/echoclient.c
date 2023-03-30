@@ -6,7 +6,7 @@
 int main(){
     int sock[4];
     int tmp=0;
-    char * ip;
+    char ip[MAX_IP];
     int i=0;
 
     for (; i<4;i++){
@@ -19,18 +19,12 @@ int main(){
     Write("Enter Ip: ",10,Console_Output);
     ConsoleReadLine(ip, MAX_IP);
 
-    for (i=0; i<4;i++){
-        if(Connect(sock[i],ip,PORT)==-1){
+    for(i=0;i<4;i++){
+        if(Connect(sock[i],ip,PORT) == -1){
             Exit(1);
         }
-    }
-
-    for(i=0;i<4;i++){
-        // if(Connect(sock[i],ip,PORT)==-1){
-        //     Exit(1);
-        // }
         while(1){
-            char * buffer;
+            char buffer[MAX_IB];
             int count_w=1;
             if(i==0)
                 Write("0",1,Console_Output);
@@ -46,7 +40,7 @@ int main(){
             if(count_w==0)
                 break;
             Write("Server: " ,8, Console_Output);
-            Write(buffer,Read(buffer,MAX_IB,sock[i]),Console_Output);
+            Write(buffer, Read(buffer,MAX_IB,sock[i]), Console_Output);
             Write("\n" ,1, Console_Output);
         }
         Close(sock[i]);

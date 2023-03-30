@@ -48,7 +48,6 @@ public:
         currentOffset = 0;
         if (t != SOCKET) {
             absolutePath = realpath(name, NULL);
-            cout << absolutePath << endl;
         }
     }
     // close the file

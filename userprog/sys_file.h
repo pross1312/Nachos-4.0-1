@@ -2,7 +2,7 @@
 #define __USERPROG_SYS_FILE_H__ 
 #include "syscall.h"
 
-const int MAX_OPEN_FILES = 20;
+// const int MAX_OPEN_FILES = 20;
 
 int findEmptySlot();
 

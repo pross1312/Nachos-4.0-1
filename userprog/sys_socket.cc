@@ -1,6 +1,7 @@
 #include "sys_socket.h"
 #include "sys_file.h"
-
+#include "main.h"
+#include "kernel.h"
 // extern pair<OpenFile*, int> FileDescriptor[MAX_OPEN_FILES];
 
 // // namespace {
@@ -56,21 +57,30 @@ extern OpenFile* FileDescriptor[MAX_OPEN_FILES];
 
 int SYS_SocketTCP() {
     int sock;
-    int index = findEmptySlot();
+    // int index = findEmptySlot();
     // find position for to store
     // no position
-    if (index == -1)
-        return -1;
+    // if (index == -1)
+    //     return -1;
     sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0)
+    if (sock < 0) {
+        DEBUG(dbgSys, "Create socket error.")
         return -1;
-    DEBUG(dbgSys, "Create successfully socket at " << index << ", socket: " << sock << ".");
+    }
+
 #ifdef FILESYS_STUB
-    FileDescriptor[index] = new OpenFile(sock, SOCKET, NULL);
+    OpenFile* socket = new OpenFile(sock, SOCKET, NULL);
+    int result = kernel->fileSystem->add(socket);
+    if (result == -1) {
+        close(sock);
+        return -1;        
+    }
 #else
     cerr << "Error: FILESYS_STUB is not defined" << endl;
+    exit(1);
 #endif
-    return index;
+    DEBUG(dbgSys, "Create successfully socket at " << result << ", socket: " << sock << ".");
+    return result;
 }
 
 int SYS_SocketConnect(int socketID, char* ip, int port) {
@@ -83,7 +93,7 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
         return -1;
     }
 #ifdef FILESYS_STUB
-    if (connect(FileDescriptor[socketID]->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (connect(kernel->fileSystem->get(socketID)->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         DEBUG(dbgSys, "Can't connect to server.");
         return -1;
     }

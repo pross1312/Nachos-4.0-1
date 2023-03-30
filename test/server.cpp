@@ -83,8 +83,10 @@ int main(int argc, char* argv[]) {
         printf("Message from client: %s\n", recvbuff);
 
         //write data via socket
+        memset(sendbuff, 0, 256);
         strcpy(sendbuff, "Server has got message\n");
-        n = write(newsockfd, sendbuff, sizeof(sendbuff));
+
+        n = write(newsockfd, sendbuff, strlen(sendbuff));
         if (n < 0) printf("ERROR writing to socket");
 
         // close(newsockfd);    //Dong ket noi cua client

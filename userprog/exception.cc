@@ -70,7 +70,6 @@ void ExceptionHandler(ExceptionType which) {
         case SC_Exit: {
             DEBUG(dbgSys, "Exit program...");
             int status = kernel->machine->ReadRegister(4);
-            SYS_CloseAll();
             if (status == 0)
                 cout << endl << "Exit normal. " << endl;
             else
@@ -81,7 +80,6 @@ void ExceptionHandler(ExceptionType which) {
 
         case SC_Halt: {
             DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
-            SYS_CloseAll();
             SysHalt();
 
             ASSERTNOTREACHED();
