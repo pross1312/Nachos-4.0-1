@@ -5,11 +5,6 @@
 
 int SYS_SocketTCP() {
     int sock;
-    // int index = findEmptySlot();
-    // find position for to store
-    // no position
-    // if (index == -1)
-    //     return -1;
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         DEBUG(dbgSys, "Create socket error.")
