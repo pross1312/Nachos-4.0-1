@@ -115,10 +115,12 @@ int SYS_Write(char* buffer, int size, OpenFileId id) {
         DEBUG(dbgSys, "Write " << buffer << " to file " << id);
         if (file) {
             int result = file->Write(buffer, size);
+            cout << result << endl;
             if (result != -1) {
                 DEBUG(dbgSys, "Successfully write " << result << " bytes");
             }
             else {
+                cerr << "FAILED" << endl;
                 DEBUG(dbgSys, "Can't write to file " << file->filePath() << ", type: " << file->type());
             }
             return result;

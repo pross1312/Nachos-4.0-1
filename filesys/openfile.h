@@ -49,6 +49,8 @@ public:
         if (t != SOCKET) {
             absolutePath = realpath(name, NULL);
         }
+        else
+            absolutePath = NULL;
     }
     // close the file
     ~OpenFile() {
@@ -76,7 +78,7 @@ public:
         return numRead;
     }
     int Write(char* from, int numBytes) {
-
+        
         int numWritten = -1;
         if (_type == READ_ONLY)
             return -1;

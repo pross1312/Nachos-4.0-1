@@ -22,7 +22,7 @@ int SYS_SocketTCP() {
     cerr << "Error: FILESYS_STUB is not defined" << endl;
     exit(1);
 #endif
-    DEBUG(dbgSys, "Create successfully socket at " << result << ", socket: " << sock << ".");
+    DEBUG(dbgNet, "Create successfully socket at " << result << ", socket: " << sock << ".");
     return result;
 }
 
@@ -32,12 +32,12 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
     if (inet_pton(AF_INET, ip, &server_addr.sin_addr) <= 0) {
-        DEBUG(dbgSys, "Can't parse ip address.");
+        DEBUG(dbgNet, "Can't parse ip address.");
         return -1;
     }
 #ifdef FILESYS_STUB
     if (connect(kernel->fileSystem->get(socketID)->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        DEBUG(dbgSys, "Can't connect to server.");
+        DEBUG(dbgNet, "Can't connect to server.");
         return -1;
     }
 #else
@@ -45,7 +45,7 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
     return -1;
 #endif
 
-    DEBUG(dbgSys, "Connect successfully socket at id: " << socketID);
+    DEBUG(dbgNet, "Connect successfully socket at id: " << socketID);
     return 0;
 }
 

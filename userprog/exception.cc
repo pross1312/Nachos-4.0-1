@@ -188,7 +188,7 @@ void ExceptionHandler(ExceptionType which) {
             char* buffer = new char[maxSize + 1];
             bzero(buffer, maxSize + 1);
             int i;
-            for (i = 0; i < maxSize + 1; i++) {
+            for (i = 0; i < maxSize; i++) {
                 char c = kernel->synchConsoleIn->GetChar();
                 if (c == EOF || c == '\n') {
                     buffer[i] = '\0';
@@ -196,10 +196,14 @@ void ExceptionHandler(ExceptionType which) {
                 }
                 buffer[i] = c;
             }
-            if (writeToMem(buffer, maxSize, virAddr))
+            if (writeToMem(buffer, maxSize, virAddr)) {
+                DEBUG(dbgSys, "Successfully read " << i << " bytes.");
                 kernel->machine->WriteRegister(2, i);
-            else
+            }
+            else {
+                DEBUG(dbgSys, "Write memory error.");
                 kernel->machine->WriteRegister(2, -1);
+            }
             delete[] buffer;
             return advancePC();
         }
