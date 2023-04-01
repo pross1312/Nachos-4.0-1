@@ -1,4 +1,5 @@
 #include "../userprog/syscall.h"
+#define MAX_IP 20
 
 int main() {
     OpenFileId file_input_id = 0;
@@ -7,9 +8,9 @@ int main() {
     char fileName[MAX_OPEN_FILE_NAME];
     char sendBuff[100];
     char readBuff[100];
-    char ip[20];
+    char ip[MAX_IP];
     int check = 0;
-
+    
     check = Write("Input file: ", 13, Console_Output);
     if (check == -1) {
         Exit(10);
@@ -31,8 +32,6 @@ int main() {
         Exit(11);
     }
 
-
-
     check = ConsoleReadLine(fileName, MAX_OPEN_FILE_NAME);
     if (check <= 0) {
         Exit(3);
@@ -40,14 +39,7 @@ int main() {
 
     file_output_id = Open(fileName, READ_WRITE);
     if (file_output_id == -1) {
-        check = Create(fileName);
-        if (check == -1) {
-            Exit(4);
-        }
-        file_output_id = Open(fileName, READ_WRITE);
-        if (file_output_id == -1) {
-            Exit(4);
-        }
+        Exit(4);
     }
 
     sockID = SocketTCP();
