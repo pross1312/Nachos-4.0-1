@@ -40,7 +40,6 @@ int main(){
         return(1);
     }
     while ((valread = read(new_socket, buffer, 1024)) > 0){
-        std::cout << "Client: " << buffer << "\n";
         for (int j = 0; buffer[j]; j++){
             buffer[j] = toupper(buffer[j]);
         }
