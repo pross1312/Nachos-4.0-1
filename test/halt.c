@@ -15,7 +15,7 @@
 int main(){
     int fileId, count;
     char buffer[20];
-    // Create("Hello.txt");
+    Create("Hello.txt");
     fileId = Open("Hello.txt", READ_WRITE);
     count = Write("My name is tuong\n", 18, fileId);
     if (count != -1) {
