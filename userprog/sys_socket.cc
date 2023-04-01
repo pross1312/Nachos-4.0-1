@@ -10,7 +10,7 @@ int SYS_SocketTCP() {
         DEBUG(dbgSys, "Create socket error.")
         return -1;
     }
-
+    
 #ifdef FILESYS_STUB
     OpenFile* socket = new OpenFile(sock, SOCKET, NULL);
     int result = kernel->fileSystem->add(socket);

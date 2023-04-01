@@ -1,54 +1,86 @@
 #include "../userprog/syscall.h"
-#define MAX_IP 15
-#define PORT 8080
-#define BUFFER_SIZE 1024
 
-int main(){
-    int count_w=BUFFER_SIZE;
-    int sock=SocketTCP();
-    int tmp=0;
-    char ip[MAX_IP];
-    int i=0;
-    
-    char file_name[MAX_OPEN_FILE_NAME];
-    OpenFileId file,file_tmp;
-    Write("Name file\n",10,Console_Output);
-    ConsoleReadLine(file_name,MAX_OPEN_FILE_NAME);
+int main() {
+    OpenFileId file_input_id = 0;
+    OpenFileId file_output_id = 0;
+    int sockID = 0;
+    char fileName[MAX_OPEN_FILE_NAME];
+    char sendBuff[100];
+    char readBuff[100];
+    char ip[20];
+    int check = 0;
 
-    file = Open(file_name, READ_WRITE);
-    if(Create("t.txt")){
+    check = Write("Input file: ", 13, Console_Output);
+    if (check == -1) {
+        Exit(10);
+    }
+
+    check = ConsoleReadLine(fileName, MAX_OPEN_FILE_NAME);
+    if (check <= 0) {
         Exit(1);
     }
-    file_tmp = Open("t.txt",READ_WRITE);
 
-    if(file==-1)
-        Exit(1);
+    file_input_id = Open(fileName, READ_ONLY);
 
-    if(sock ==-1){
-        Exit(1);
+    if (file_input_id == -1) {
+        Exit(2);
     }
-    
-    Write("Enter Ip:\n",10,Console_Output);
-    ConsoleReadLine(ip, MAX_IP);
 
-    if(Connect(sock,ip,PORT)==-1){
-        Exit(1);
+    check = Write("Output file: ", 14, Console_Output);
+    if (check == -1) {
+        Exit(11);
     }
-    while(count_w== BUFFER_SIZE){
-        char buffer[BUFFER_SIZE];
-        int count_w= Read(buffer,BUFFER_SIZE,file);
-        if((tmp=Write(buffer,count_w,sock)) == 0)
-            break;
-        Write(buffer,Read(buffer,BUFFER_SIZE,sock),file_tmp);
+
+
+
+    check = ConsoleReadLine(fileName, MAX_OPEN_FILE_NAME);
+    if (check <= 0) {
+        Exit(3);
     }
-    while(count_w== BUFFER_SIZE){
-        char buf[BUFFER_SIZE];
-        count_w = Read(buf,BUFFER_SIZE,file_tmp);
-        count_w = Write(buf,count_w,file);
+
+    file_output_id = Open(fileName, READ_WRITE);
+    if (file_output_id == -1) {
+        check = Create(fileName);
+        if (check == -1) {
+            Exit(4);
+        }
+        file_output_id = Open(fileName, READ_WRITE);
+        if (file_output_id == -1) {
+            Exit(4);
+        }
     }
-    Close(sock);
-    Close(file);
-    Close(file_tmp);
-    Remove("t.txt");
+
+    sockID = SocketTCP();
+    if (sockID == -1) {
+        Exit(5);
+    }
+
+    check = Write("Ip: ", 5, Console_Output);
+    if (check == -1) {
+        Exit(12);
+    }
+
+    check = ConsoleReadLine(ip, 20);
+    if (check <= 0) {
+        Exit(13);
+    }
+
+    check = Connect(sockID, ip, 8080);
+    if (check == -1) {
+        Exit(6);
+    }
+
+    do {
+        check = Read(sendBuff, 100, file_input_id);
+        if (Write(sendBuff, check, sockID) == -1) {
+            Exit(19);
+        }
+        check = Read(readBuff, 100, sockID);
+        if (check == -1) {
+            Exit(20);
+        }
+        Write(readBuff, check, file_output_id);
+    } while (check == 100);
+
     Halt();
 }
