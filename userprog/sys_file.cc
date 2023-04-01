@@ -57,10 +57,6 @@ int SYS_Remove(char* name) {
 
 int SYS_Open(char* name, int type) {
     DEBUG(dbgSys, "Opening file " << name << "...");
-    if (type != READ_WRITE && type != READ_ONLY) {
-        DEBUG(dbgSys, "Wrong open type.");
-        return -1;
-    }
     return kernel->fileSystem->Open(name, type);
 }
 

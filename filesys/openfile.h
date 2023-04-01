@@ -28,7 +28,7 @@
 #ifdef FILESYS_STUB			// Temporarily implement calls to 
                     // Nachos file system as calls to UNIX!
                     // See definitions listed under #else
-#include "syscall.h"
+#include "../userprog/syscall.h"
 #include <unistd.h>
 
 

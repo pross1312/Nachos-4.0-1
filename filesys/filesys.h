@@ -90,7 +90,7 @@ public:
     int Open(char* name, int t) {
         if (t == SOCKET) {
             DEBUG(dbgFile, "Can't open file with socket type.");
-            return NULL;
+            return -1;
         }
         int fileDescriptor = OpenForReadWrite(name, FALSE);
 
