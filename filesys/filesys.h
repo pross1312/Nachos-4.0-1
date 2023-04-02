@@ -47,11 +47,11 @@ class FileSystem {
 public:
     FileSystem() {
         for (int i = 0; i < MAX_OPEN_FILES; i++)
-            FileDescriptor[i] = NULL;
+            Open_Files[i] = NULL;
     }
     ~FileSystem() {
         for (int i = 0; i < MAX_OPEN_FILES; i++)
-            delete FileDescriptor[i];
+            delete Open_Files[i];
     }
 
     bool Create(char* name) {
@@ -65,9 +65,9 @@ public:
     int add(OpenFile* f) {
         // 0 and 1 for console input/output
         for (int i = 2; i < MAX_OPEN_FILES; i++)
-            if (FileDescriptor[i] == NULL) {
+            if (Open_Files[i] == NULL) {
                 DEBUG(dbgFile, "Add open file successfully: slot " << i);
-                FileDescriptor[i] = f;
+                Open_Files[i] = f;
                 return i;
             }
         DEBUG(dbgFile, "Add open file error: no available space.");
@@ -75,13 +75,13 @@ public:
     }
 
     bool Close(int id) {
-        OpenFile* file = FileDescriptor[id];
+        OpenFile* file = Open_Files[id];
         if (!file) {
             DEBUG(dbgFile, "File is not openning id: " << id);
             return false;
         }
         DEBUG(dbgFile, "Successfully close file id: " << id);
-        FileDescriptor[id] = NULL;
+        Open_Files[id] = NULL;
         delete file;
         return true;
     }
@@ -113,7 +113,7 @@ public:
             return false;
         }
         for (int i = 2; i < MAX_OPEN_FILES; i++)
-            if (FileDescriptor[i] != NULL && strcmp(full_path, FileDescriptor[i]->filePath()) == 0) {
+            if (Open_Files[i] != NULL && strcmp(full_path, Open_Files[i]->filePath()) == 0) {
                 DEBUG(dbgFile, "File " << name << " is open.")
                     return true;
             }
@@ -130,7 +130,7 @@ public:
 
     OpenFile* get(int id) {
         ASSERT(id < MAX_OPEN_FILES && id > 1);
-        return FileDescriptor[id];
+        return Open_Files[id];
     }
 
     bool Remove(char* name) {
@@ -142,7 +142,7 @@ public:
     }
 
 private:
-    OpenFile* FileDescriptor[MAX_OPEN_FILES];
+    OpenFile* Open_Files[MAX_OPEN_FILES];
 };
 
 #else // FILESYS

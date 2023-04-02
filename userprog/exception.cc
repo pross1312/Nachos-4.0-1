@@ -71,10 +71,10 @@ void ExceptionHandler(ExceptionType which) {
             DEBUG(dbgSys, "Exit program...");
             int status = kernel->machine->ReadRegister(4);
             if (status == 0)
-                cout << endl << "Exit normal. " << endl;
+                cout << "Exit normal. " << endl;
             else
                 cout << "Exit with an error code " << status << endl;
-            exit(status);
+            SysHalt();
             ASSERTNOTREACHED();
         }
 

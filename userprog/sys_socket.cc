@@ -7,7 +7,7 @@ int SYS_SocketTCP() {
     int sock;
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        DEBUG(dbgSys, "Create socket error.")
+        DEBUG(dbgNet, "Create socket error.")
         return -1;
     }
     
@@ -20,7 +20,7 @@ int SYS_SocketTCP() {
     }
 #else
     cerr << "Error: FILESYS_STUB is not defined" << endl;
-    exit(1);
+    kernel->interrupt->Halt();
 #endif
     DEBUG(dbgNet, "Create successfully socket at " << result << ", socket: " << sock << ".");
     return result;
@@ -42,14 +42,14 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
     }
 #else
     cerr << "Error: FILESYS_STUB is not defined" << endl;
-    return -1;
+    kernel->interrupt->Halt();
 #endif
 
     DEBUG(dbgNet, "Connect successfully socket at id: " << socketID);
     return 0;
 }
 
-
+// int OpenSocketID[MAX_OPEN_SOCKETS];
 // int SYS_SocketTCP() {
 //     int sock;
 //     int index = -1;
