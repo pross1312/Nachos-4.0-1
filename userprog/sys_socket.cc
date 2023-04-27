@@ -13,9 +13,9 @@ int SYS_SocketTCP() {
     
 #ifdef FILESYS_STUB
     OpenFile* socket = new OpenFile(sock, SOCKET, NULL);
-    int result = kernel->fileSystem->add(socket);
+    int result = kernel->currentThread->process->addOpenFile(socket);
     if (result == -1) {
-        close(sock);
+        delete socket;
         return -1;        
     }
 #else
@@ -23,10 +23,14 @@ int SYS_SocketTCP() {
     kernel->interrupt->Halt();
 #endif
     DEBUG(dbgNet, "Create successfully socket at " << result << ", socket: " << sock << ".");
+
+    // apply the same things as Syscall open
+    // read in sys_file.cc for more information
     return result;
 }
 
 int SYS_SocketConnect(int socketID, char* ip, int port) {
+
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(sockaddr_in));
     server_addr.sin_family = AF_INET;
@@ -36,7 +40,12 @@ int SYS_SocketConnect(int socketID, char* ip, int port) {
         return -1;
     }
 #ifdef FILESYS_STUB
-    if (connect(kernel->fileSystem->get(socketID)->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    OpenFile* socketFile = kernel->currentThread->process->getFile(socketID);
+    if (socketFile == NULL) {
+        DEBUG(dbgNet, "Can't connect to server, socket file is null");
+        return -1;
+    }
+    if (connect(socketFile->getFileDescriptor(), (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         DEBUG(dbgNet, "Can't connect to server.");
         return -1;
     }

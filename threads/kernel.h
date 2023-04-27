@@ -12,13 +12,18 @@
 #include "copyright.h"
 #include "debug.h"
 #include "utility.h"
-#include "thread.h"
+#include "Mem_Manager.h"
 #include "scheduler.h"
 #include "interrupt.h"
 #include "stats.h"
 #include "alarm.h"
 #include "filesys.h"
 #include "machine.h"
+#include "Table.h"
+#include "Process.h"
+
+#define MAX_RUNNING_PROCESS 20
+#define MAX_OPEN_FILES 20
 
 class PostOfficeInput;
 class PostOfficeOutput;
@@ -58,6 +63,9 @@ class Kernel {
     PostOfficeInput *postOfficeIn;
     PostOfficeOutput *postOfficeOut;
 
+    MemManager *memory_manager;
+    Table<Process>* pTable;
+    
     int hostName;               // machine identifier
 
   private:

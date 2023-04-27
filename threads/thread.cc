@@ -19,6 +19,7 @@
 #include "copyright.h"
 #include "thread.h"
 #include "switch.h"
+#include "main.h"
 #include "synch.h"
 #include "sysdep.h"
 
@@ -34,7 +35,7 @@ const int STACK_FENCEPOST = 0xdedbeef;
 //----------------------------------------------------------------------
 
 Thread::Thread(char* threadName) {
-    name = threadName;
+    name = strdup(threadName);
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
@@ -43,6 +44,7 @@ Thread::Thread(char* threadName) {
         // new thread ignores contents 
         // of machine registers
     }
+    bzero(userRegisters, sizeof(int) * 40);
     space = NULL;
 }
 
@@ -64,6 +66,7 @@ Thread::~Thread() {
     ASSERT(this != kernel->currentThread);
     if (stack != NULL)
         DeallocBoundedArray((char*)stack, StackSize * sizeof(int));
+    free(name);
 }
 
 //----------------------------------------------------------------------
@@ -200,8 +203,8 @@ Thread::Yield() {
     ASSERT(this == kernel->currentThread);
 
     DEBUG(dbgThread, "Yielding thread: " << name);
-
     nextThread = kernel->scheduler->FindNextToRun();
+    
     if (nextThread != NULL) {
         kernel->scheduler->ReadyToRun(this);
         kernel->scheduler->Run(nextThread, FALSE);

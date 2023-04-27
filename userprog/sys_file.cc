@@ -28,7 +28,7 @@ int SYS_Seek(int position, OpenFileId id) {
         DEBUG(dbgSys, "Invalid id: " << id);
         return -1;
     }
-    OpenFile* file = kernel->fileSystem->get(id);
+    OpenFile* file = kernel->currentThread->process->getFile(id);
     int length = file->Length();
     DEBUG(dbgSys, "Length file: " << length << " seek position: " << position);
     if (position > length || position < -1)
@@ -46,8 +46,12 @@ int SYS_Seek(int position, OpenFileId id) {
 }
 
 
-
 int SYS_Remove(char* name) {
+    if (kernel->currentThread->process->isOpenFile(name)) {
+        DEBUG(dbgFile, "File " <<name << " is open");
+        return -1; 
+    }
+    DEBUG(dbgFile, "File " << name << " isn't open, removing");
     if (kernel->fileSystem->Remove(name)) {
         DEBUG(dbgSys, "Successfully remove " << name);
         return 0;
@@ -57,7 +61,15 @@ int SYS_Remove(char* name) {
 
 int SYS_Open(char* name, int type) {
     DEBUG(dbgSys, "Opening file " << name << "...");
-    return kernel->fileSystem->Open(name, type);
+    OpenFile* file = kernel->fileSystem->Open(name, type);
+    int index = kernel->currentThread->process->addOpenFile(file);
+    if (index == -1) {
+        DEBUG(dbgFile, "Can't open file " << name << ", table is full");
+        delete file;
+        return -1;
+    }
+    DEBUG(dbgFile, "Successfully open file " << name << "\n");
+    return  index;
 }
 
 int SYS_Read(char* buffer, int size, OpenFileId id) {
@@ -69,7 +81,7 @@ int SYS_Read(char* buffer, int size, OpenFileId id) {
         char ch;
         int i;
         for (i = 0; i < size; i++) {
-            ch = kernel->synchConsoleIn->GetChar();
+            ch = kernel->currentThread->process->getConsoleInput()->GetChar();
             if (ch == EOF)
                 break;
             buffer[i] = ch;
@@ -78,7 +90,7 @@ int SYS_Read(char* buffer, int size, OpenFileId id) {
         return i;
     }
     else {
-        OpenFile* file = kernel->fileSystem->get(id);
+        OpenFile* file = kernel->currentThread->process->getFile(id);
         if (file) {
             int result = file->Read(buffer, size);
             if (result != -1) {
@@ -102,12 +114,12 @@ int SYS_Write(char* buffer, int size, OpenFileId id) {
     if (id == Console_Output) {
         DEBUG(dbgSys, "Write " << buffer << " to console.");
         for (int i = 0; i < size; i++) {
-            kernel->synchConsoleOut->PutChar(buffer[i]);
+            kernel->currentThread->process->getConsoleOutput()->PutChar(buffer[i]);
         }
         return size;
     }
     else {
-        OpenFile* file = kernel->fileSystem->get(id);
+        OpenFile* file = kernel->currentThread->process->getFile(id);
         DEBUG(dbgSys, "Write " << buffer << " to file " << id);
         if (file) {
             int result = file->Write(buffer, size);
@@ -127,9 +139,12 @@ int SYS_Write(char* buffer, int size, OpenFileId id) {
 }
 
 int SYS_Close(OpenFileId id) {
+    DEBUG(dbgFile, "Closing file " << id);
     if (id <= 1 || id >= MAX_OPEN_FILES) {
-        DEBUG(dbgSys, "ID exceeds file descriptor array, id: " << id << ".")
-            return -1;
+        DEBUG(dbgSys, "ID exceeds file descriptor array, id: " << id << ".");
+        return -1;
     }
-    return kernel->fileSystem->Close(id) ? 0 : -1; 
+    if (kernel->currentThread->process->closeOpenFile(id))
+        return 0;
+    return -1;
 }

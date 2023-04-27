@@ -284,9 +284,11 @@ main(int argc, char** argv) {
         AddrSpace* space = new AddrSpace;
         ASSERT(space != (AddrSpace*)NULL);
         if (space->Load(userProgName)) {  // load the program into the space
-            space->Execute();              // run the program
-            ASSERTNOTREACHED();            // Execute never returns
+            kernel->currentThread->space = space; // set init process code
+            Process* init = new Process(NULL, kernel->currentThread, "initProcess");
+            ASSERTNOTREACHED();
         }
+        delete space;
     }
 
     // If we don't run a user program, we may get here.

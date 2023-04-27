@@ -42,6 +42,7 @@ bool readFromMem(char* buffer, int size, int virAddr) {
         size -= 1;
         idx += 1;
     }
+    DEBUG(dbgSys, "Read " << size << ", buffer: " << buffer << " from mem");
     return true;
 }
 
@@ -79,6 +80,7 @@ bool writeToMem(char* buffer, int size, int virAddr) {
         count += 1;
     }
 
+    DEBUG(dbgSys, "Write " << size << ", buffer: " << buffer << " to mem");
     return true;
 }
 

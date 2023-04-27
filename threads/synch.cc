@@ -44,7 +44,8 @@
 //	"initialValue" is the initial value of the semaphore.
 //----------------------------------------------------------------------
 
-Semaphore::Semaphore(char* debugName, int initialValue) {
+Semaphore::Semaphore(char* debugName, int initialValue)
+{
     name = debugName;
     value = initialValue;
     queue = new List<Thread*>;
@@ -56,7 +57,8 @@ Semaphore::Semaphore(char* debugName, int initialValue) {
 //	is still waiting on the semaphore!
 //----------------------------------------------------------------------
 
-Semaphore::~Semaphore() {
+Semaphore::~Semaphore()
+{
     delete queue;
 }
 
@@ -71,7 +73,8 @@ Semaphore::~Semaphore() {
 //----------------------------------------------------------------------
 
 void
-Semaphore::P() {
+Semaphore::P()
+{
     Interrupt* interrupt = kernel->interrupt;
     Thread* currentThread = kernel->currentThread;
 
@@ -97,7 +100,8 @@ Semaphore::P() {
 //----------------------------------------------------------------------
 
 void
-Semaphore::V() {
+Semaphore::V()
+{
     Interrupt* interrupt = kernel->interrupt;
 
     // disable interrupts
@@ -120,7 +124,8 @@ Semaphore::V() {
 
 static Semaphore* ping;
 static void
-SelfTestHelper(Semaphore* pong) {
+SelfTestHelper(Semaphore* pong)
+{
     for (int i = 0; i < 10; i++) {
         ping->P();
         pong->V();
@@ -128,7 +133,8 @@ SelfTestHelper(Semaphore* pong) {
 }
 
 void
-Semaphore::SelfTest() {
+Semaphore::SelfTest()
+{
     Thread* helper = new Thread("ping");
 
     ASSERT(value == 0);		// otherwise test won't work!
@@ -149,7 +155,8 @@ Semaphore::SelfTest() {
 //	"debugName" is an arbitrary name, useful for debugging.
 //----------------------------------------------------------------------
 
-Lock::Lock(char* debugName) {
+Lock::Lock(char* debugName)
+{
     name = debugName;
     semaphore = new Semaphore("lock", 1);  // initially, unlocked
     lockHolder = NULL;
@@ -159,9 +166,21 @@ Lock::Lock(char* debugName) {
 // Lock::~Lock
 // 	Deallocate a lock
 //----------------------------------------------------------------------
-Lock::~Lock() {
+Lock::~Lock()
+{
     delete semaphore;
 }
+
+
+
+bool Lock::IsHeldByCurrentThread()
+{
+    return lockHolder == kernel->currentThread;
+}
+// return true if the current thread 
+// holds this lock.
+
+
 
 //----------------------------------------------------------------------
 // Lock::Acquire
@@ -170,7 +189,8 @@ Lock::~Lock() {
 //	equal to busy, and semaphore value of 1 equal to free.
 //----------------------------------------------------------------------
 
-void Lock::Acquire() {
+void Lock::Acquire()
+{
     semaphore->P();
     lockHolder = kernel->currentThread;
 }
@@ -186,7 +206,8 @@ void Lock::Acquire() {
 // 	may release it.
 //---------------------------------------------------------------------
 
-void Lock::Release() {
+void Lock::Release()
+{
     ASSERT(IsHeldByCurrentThread());
     lockHolder = NULL;
     semaphore->V();
@@ -200,7 +221,8 @@ void Lock::Release() {
 //
 //	"debugName" is an arbitrary name, useful for debugging.
 //----------------------------------------------------------------------
-Condition::Condition(char* debugName) {
+Condition::Condition(char* debugName)
+{
     name = debugName;
     waitQueue = new List<Semaphore*>;
 }
@@ -210,7 +232,8 @@ Condition::Condition(char* debugName) {
 // 	Deallocate the data structures implementing a condition variable.
 //----------------------------------------------------------------------
 
-Condition::~Condition() {
+Condition::~Condition()
+{
     delete waitQueue;
 }
 
@@ -229,7 +252,8 @@ Condition::~Condition() {
 //	"conditionLock" -- lock protecting the use of this condition
 //----------------------------------------------------------------------
 
-void Condition::Wait(Lock* conditionLock) {
+void Condition::Wait(Lock* conditionLock)
+{
     Semaphore* waiter;
 
     ASSERT(conditionLock->IsHeldByCurrentThread());
@@ -257,7 +281,8 @@ void Condition::Wait(Lock* conditionLock) {
 //	"conditionLock" -- lock protecting the use of this condition
 //----------------------------------------------------------------------
 
-void Condition::Signal(Lock* conditionLock) {
+void Condition::Signal(Lock* conditionLock)
+{
     Semaphore* waiter;
 
     ASSERT(conditionLock->IsHeldByCurrentThread());
@@ -275,7 +300,8 @@ void Condition::Signal(Lock* conditionLock) {
 //	"conditionLock" -- lock protecting the use of this condition
 //----------------------------------------------------------------------
 
-void Condition::Broadcast(Lock* conditionLock) {
+void Condition::Broadcast(Lock* conditionLock)
+{
     while (!waitQueue->IsEmpty()) {
         Signal(conditionLock);
     }

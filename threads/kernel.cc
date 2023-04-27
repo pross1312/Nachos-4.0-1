@@ -114,6 +114,10 @@ Kernel::Initialize() {
     postOfficeIn = new PostOfficeInput(10);
     postOfficeOut = new PostOfficeOutput(reliability);
 
+    // memory manager for multiprogramming
+    memory_manager = new MemManager();
+    pTable = new Table<Process>(MAX_RUNNING_PROCESS, "processes management");
+
     interrupt->Enable();
 }
 
@@ -123,18 +127,19 @@ Kernel::Initialize() {
 //----------------------------------------------------------------------
 
 Kernel::~Kernel() {
-    delete stats;
-    delete interrupt;
-    delete scheduler;
-    delete alarm;
-    delete machine;
-    delete synchConsoleIn;
-    delete synchConsoleOut;
-    delete synchDisk;
-    delete fileSystem;
-    delete postOfficeIn;
+    delete pTable;
+    delete memory_manager;
     delete postOfficeOut;
-
+    delete postOfficeIn;
+    delete fileSystem;
+    delete synchDisk;
+    delete synchConsoleOut;
+    delete synchConsoleIn;
+    delete machine;
+    delete alarm;
+    delete stats;
+    delete scheduler;
+    delete interrupt;
     Exit(0);
 }
 

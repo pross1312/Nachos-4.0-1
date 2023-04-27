@@ -58,7 +58,8 @@
 //----------------------------------------------------------------------
 
 
-void ExceptionHandler(ExceptionType which) {
+void ExceptionHandler(ExceptionType which)
+{
     int type = kernel->machine->ReadRegister(2);
 
     DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
@@ -85,6 +86,7 @@ void ExceptionHandler(ExceptionType which) {
             ASSERTNOTREACHED();
             break;
         }
+
         case SC_Remove: {
             int vAddr = kernel->machine->ReadRegister(4);
             char* fileName = new char[MAX_OPEN_FILE_NAME + 1];
@@ -152,6 +154,7 @@ void ExceptionHandler(ExceptionType which) {
             int vAddr = kernel->machine->ReadRegister(4);
             int size = kernel->machine->ReadRegister(5);
             OpenFileId fileId = kernel->machine->ReadRegister(6);
+            DEBUG(dbgSys, "Sycall read, va " << vAddr << " sz " << size << " id " << fileId);
             char* data = new char[size + 1];
             bzero(data, size + 1);
             int count = SYS_Read(data, size, fileId);
@@ -168,6 +171,7 @@ void ExceptionHandler(ExceptionType which) {
             int vAddr = kernel->machine->ReadRegister(4);
             int size = kernel->machine->ReadRegister(5);
             OpenFileId fileId = kernel->machine->ReadRegister(6);
+            DEBUG(dbgSys, "Sycall write, va " << vAddr << " sz " << size << " id " << fileId);
             char* data = new char[size + 1];
             bzero(data, size + 1);
             if (readFromMem(data, size, vAddr)) {
@@ -185,6 +189,7 @@ void ExceptionHandler(ExceptionType which) {
             DEBUG(dbgSys, "Read a line from console into a char array.");
             int virAddr = kernel->machine->ReadRegister(4);
             int maxSize = kernel->machine->ReadRegister(5);
+            DEBUG(dbgSys, "Sycall read line, va " << virAddr << " sz " << maxSize);
             char* buffer = new char[maxSize + 1];
             bzero(buffer, maxSize + 1);
             int i;
@@ -273,7 +278,7 @@ void ExceptionHandler(ExceptionType which) {
 
 
 
-        case SC_Add:
+        case SC_Add: {
             DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
 
             /* Process SysAdd Systemcall*/
@@ -301,6 +306,22 @@ void ExceptionHandler(ExceptionType which) {
             ASSERTNOTREACHED();
 
             break;
+        }
+        case SC_Exec: {
+            int vAddr = kernel->machine->ReadRegister(4);
+            char* name = new char[MAX_OPEN_FILE_NAME + 1];
+            bzero(name, MAX_OPEN_FILE_NAME + 1);
+            readMemUntil(name, vAddr, '\0', MAX_OPEN_FILE_NAME);
+            AddrSpace* space = new AddrSpace;
+            if (space->Load(name)) {
+                cout << "Create " << name << "\n";
+                Thread* t = new Thread("User program");
+                t->space = space;
+                Process* p = new Process(kernel->currentThread->process, t, name);
+            }
+            delete[] name;
+            return advancePC();
+        }
 
         default:
             cerr << "Unexpected system call " << type << "\n";

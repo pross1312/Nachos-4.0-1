@@ -20,7 +20,6 @@
 #include "copyright.h"
 #include "thread.h"
 #include "list.h"
-#include "main.h"
 
 // The following class defines a "semaphore" whose value is a non-negative
 // integer.  The semaphore has only two operations P() and V():
@@ -75,8 +74,7 @@ class Lock {
     void Acquire(); 		// these are the only operations on a lock
     void Release(); 		// they are both *atomic*
 
-    bool IsHeldByCurrentThread() { 
-    		return lockHolder == kernel->currentThread; }
+    bool IsHeldByCurrentThread();
     				// return true if the current thread 
 				// holds this lock.
     

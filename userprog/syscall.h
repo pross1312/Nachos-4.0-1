@@ -35,7 +35,7 @@
 #define SC_ThreadExit   14
 #define SC_ThreadJoin   15
 
-// -------------------------------------------------------
+  // -------------------------------------------------------
 
 #define SC_ConsoleReadLine 42
 #define SC_SocketTCP 45
@@ -72,7 +72,7 @@ void Halt();
 
 int ConsoleReadLine(char* buffer, int maxSize);
 /*
-    Socket 
+    Socket
 */
 int SocketTCP();
 int Connect(int socketID, char* ip, int port);

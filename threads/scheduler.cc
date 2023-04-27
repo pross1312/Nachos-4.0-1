@@ -30,10 +30,10 @@
 //----------------------------------------------------------------------
 
 Scheduler::Scheduler()
-{ 
-    readyList = new List<Thread *>; 
+{
+    readyList = new List<Thread*>;
     toBeDestroyed = NULL;
-} 
+}
 
 //----------------------------------------------------------------------
 // Scheduler::~Scheduler
@@ -41,9 +41,9 @@ Scheduler::Scheduler()
 //----------------------------------------------------------------------
 
 Scheduler::~Scheduler()
-{ 
-    delete readyList; 
-} 
+{
+    delete readyList;
+}
 
 //----------------------------------------------------------------------
 // Scheduler::ReadyToRun
@@ -54,13 +54,13 @@ Scheduler::~Scheduler()
 //----------------------------------------------------------------------
 
 void
-Scheduler::ReadyToRun (Thread *thread)
+Scheduler::ReadyToRun(Thread* thread)
 {
     ASSERT(kernel->interrupt->getLevel() == IntOff);
-    DEBUG(dbgThread, "Putting thread on ready list: " << thread->getName());
-
+    DEBUG(dbgThread, "Putting thread on ready list: " << (int)thread->getName() << " " << thread->getName());
     thread->setStatus(READY);
     readyList->Append(thread);
+    DEBUG(dbgThread, "On ready: " << readyList->NumInList() << "\n");
 }
 
 //----------------------------------------------------------------------
@@ -71,15 +71,16 @@ Scheduler::ReadyToRun (Thread *thread)
 //	Thread is removed from the ready list.
 //----------------------------------------------------------------------
 
-Thread *
-Scheduler::FindNextToRun ()
+Thread*
+Scheduler::FindNextToRun()
 {
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     if (readyList->IsEmpty()) {
-	return NULL;
-    } else {
-    	return readyList->RemoveFront();
+        return NULL;
+    }
+    else {
+        return readyList->RemoveFront();
     }
 }
 
@@ -101,30 +102,30 @@ Scheduler::FindNextToRun ()
 //----------------------------------------------------------------------
 
 void
-Scheduler::Run (Thread *nextThread, bool finishing)
+Scheduler::Run(Thread* nextThread, bool finishing)
 {
-    Thread *oldThread = kernel->currentThread;
-    
+    Thread* oldThread = kernel->currentThread;
+
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     if (finishing) {	// mark that we need to delete current thread
-         ASSERT(toBeDestroyed == NULL);
-	 toBeDestroyed = oldThread;
+        ASSERT(toBeDestroyed == NULL);
+        toBeDestroyed = oldThread;
     }
-    
+
     if (oldThread->space != NULL) {	// if this thread is a user program,
         oldThread->SaveUserState(); 	// save the user's CPU registers
-	oldThread->space->SaveState();
+        oldThread->space->SaveState();
     }
-    
+
     oldThread->CheckOverflow();		    // check if the old thread
-					    // had an undetected stack overflow
+    // had an undetected stack overflow
 
     kernel->currentThread = nextThread;  // switch to the next thread
     nextThread->setStatus(RUNNING);      // nextThread is now running
-    
+
     DEBUG(dbgThread, "Switching from: " << oldThread->getName() << " to: " << nextThread->getName());
-    
+
     // This is a machine-dependent assembly language routine defined 
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
@@ -133,19 +134,19 @@ Scheduler::Run (Thread *nextThread, bool finishing)
     SWITCH(oldThread, nextThread);
 
     // we're back, running oldThread
-      
+
     // interrupts are off when we return from switch!
     ASSERT(kernel->interrupt->getLevel() == IntOff);
 
     DEBUG(dbgThread, "Now in thread: " << oldThread->getName());
 
     CheckToBeDestroyed();		// check if thread we were running
-					// before this one has finished
-					// and needs to be cleaned up
-    
+    // before this one has finished
+    // and needs to be cleaned up
+
     if (oldThread->space != NULL) {	    // if there is an address space
         oldThread->RestoreUserState();     // to restore, do it.
-	oldThread->space->RestoreState();
+        oldThread->space->RestoreState();
     }
 }
 
@@ -161,11 +162,12 @@ void
 Scheduler::CheckToBeDestroyed()
 {
     if (toBeDestroyed != NULL) {
+        DEBUG(dbgThread, "Destroying thread " << toBeDestroyed->getName());
         delete toBeDestroyed;
-	toBeDestroyed = NULL;
+        toBeDestroyed = NULL;
     }
 }
- 
+
 //----------------------------------------------------------------------
 // Scheduler::Print
 // 	Print the scheduler state -- in other words, the contents of
