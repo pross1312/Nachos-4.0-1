@@ -127,6 +127,7 @@ Kernel::Initialize() {
 //----------------------------------------------------------------------
 
 Kernel::~Kernel() {
+    delete interrupt;
     delete pTable;
     delete memory_manager;
     delete postOfficeOut;
@@ -139,7 +140,6 @@ Kernel::~Kernel() {
     delete alarm;
     delete stats;
     delete scheduler;
-    delete interrupt;
     Exit(0);
 }
 

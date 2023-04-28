@@ -63,7 +63,7 @@ SwapHeader(NoffHeader* noffH)
 
 AddrSpace::AddrSpace()
 {
-    stored_data = NULL;
+    // stored_data = NULL;
     pageTable = NULL;
     // pageTable = new TranslationEntry[NumVirtualPages];
     // for (int i = 0; i < NumVirtualPages; i++) {
@@ -120,7 +120,7 @@ AddrSpace::~AddrSpace()
         kernel->memory_manager->free(i);
     }
     delete[] pageTable;
-    delete[] stored_data;
+    // delete[] stored_data;
 }
 
 
@@ -402,14 +402,14 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState()
 {
-    ASSERT(stored_data == NULL && "Don't know what's going on");
-    DEBUG(dbgAddr, "Save: " << PageSize << " * " << numPages);
-    stored_data = new char[PageSize * numPages];
-    bzero(stored_data, PageSize * numPages);
-    for (size_t i = 0; i < numPages; i++) {
-        memcpy(stored_data + i * PageSize, &kernel->machine->mainMemory[pageTable[i].physicalPage] , PageSize);
-        // kernel->memory_manager->free(i);
-    }
+    // ASSERT(stored_data == NULL && "Don't know what's going on");
+    // DEBUG(dbgAddr, "Save: " << PageSize << " * " << numPages);
+    // stored_data = new char[PageSize * numPages];
+    // bzero(stored_data, PageSize * numPages);
+    // for (size_t i = 0; i < numPages; i++) {
+    //     memcpy(stored_data + i * PageSize, &kernel->machine->mainMemory[pageTable[i].physicalPage] , PageSize);
+    //     // kernel->memory_manager->free(i);
+    // }
 }
 
 //----------------------------------------------------------------------
@@ -422,13 +422,13 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState()
 {
-    if (stored_data != NULL) {
-        for (size_t i = 0; i < numPages; i++) {
-            memcpy(&kernel->machine->mainMemory[pageTable[i].physicalPage], stored_data + i * PageSize, PageSize);
-        }
-        delete[] stored_data;
-        stored_data = NULL;
-    }
+    // if (stored_data != NULL) {
+    //     for (size_t i = 0; i < numPages; i++) {
+    //         memcpy(&kernel->machine->mainMemory[pageTable[i].physicalPage], stored_data + i * PageSize, PageSize);
+    //     }
+    //     delete[] stored_data;
+    //     stored_data = NULL;
+    // }
     kernel->machine->pageTable = pageTable;
     kernel->machine->pageTableSize = numPages;
 }

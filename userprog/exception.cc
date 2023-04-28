@@ -315,7 +315,7 @@ void ExceptionHandler(ExceptionType which)
             AddrSpace* space = new AddrSpace;
             if (space->Load(name)) {
                 cout << "Create " << name << "\n";
-                Thread* t = new Thread("User program");
+                Thread* t = new Thread(name);
                 t->space = space;
                 Process* p = new Process(kernel->currentThread->process, t, name);
             }

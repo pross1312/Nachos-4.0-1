@@ -11,7 +11,7 @@ Process::Process(Process *p, Thread *t, const char* name)
     this->parent       = p;
     this->main_thread  = t;
     this->fTable       = new Table<OpenFile>(MAX_OPEN_FILES, "open files management");
-    this->children     = new Table<Process>(MAX_RUNNING_PROCESS, this->name);
+    this->children     = new List<Process*>;
     this->lock         = new Lock("process synchronizer");
     this->space        = t->space;
     t->process         = this;
@@ -32,7 +32,7 @@ Process::Process(Process *p, Thread *t, const char* name)
         main_thread->space->Execute(); 
     }
     else {
-        ASSERT(p->addChild(this)):
+        ASSERT(p->addChild(this));
         main_thread->Fork((VoidFunctionPtr)Process::start, this);
     }
 }
@@ -49,8 +49,10 @@ Process::~Process()
 }
 
 bool Process::addChild(Process* child) {
-    int index = this->children->add(child);
-    return index != -1;
+    if (children->IsInList(child))
+        return false;
+    children->Append(child);
+    return true;
 }
 
 int Process::addOpenFile(OpenFile* file) {

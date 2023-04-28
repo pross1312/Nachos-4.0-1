@@ -20,7 +20,7 @@
 SynchConsoleInput::SynchConsoleInput(char *inputFile)
 {
     consoleInput = new ConsoleInput(inputFile, this);
-    lock = new Lock("console in");
+    lock = new Semaphore("lock console in", 1);
     waitFor = new Semaphore("console in", 0);
 }
 
@@ -46,10 +46,10 @@ SynchConsoleInput::GetChar()
 {
     char ch;
 
-    lock->Acquire();
+    lock->P();
     waitFor->P();	// wait for EOF or a char to be available.
     ch = consoleInput->GetChar();
-    lock->Release();
+    lock->V();
     return ch;
 }
 
@@ -76,7 +76,7 @@ SynchConsoleInput::CallBack()
 SynchConsoleOutput::SynchConsoleOutput(char *outputFile)
 {
     consoleOutput = new ConsoleOutput(outputFile, this);
-    lock = new Lock("console out");
+    lock = new Semaphore("lock console out", 1);
     waitFor = new Semaphore("console out", 0);
 }
 
@@ -100,10 +100,11 @@ SynchConsoleOutput::~SynchConsoleOutput()
 void
 SynchConsoleOutput::PutChar(char ch)
 {
-    lock->Acquire();
+    lock->P();
+    DEBUG(dbgThread, " to put char");
     consoleOutput->PutChar(ch);
     waitFor->P();
-    lock->Release();
+    lock->V();
 }
 
 //----------------------------------------------------------------------
@@ -117,3 +118,4 @@ SynchConsoleOutput::CallBack()
 {
     waitFor->V();
 }
+

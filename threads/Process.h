@@ -56,7 +56,7 @@ private:
     AddrSpace* space;
     Thread* main_thread;
     Process* parent;
-    Table<Process>* children;
+    List<Process*>* children;
 
     Lock* lock;
 };

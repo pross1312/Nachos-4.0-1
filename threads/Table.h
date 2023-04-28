@@ -19,7 +19,7 @@ public:
     Table(int n, char const* name)
     {
 
-        lock = new Lock(const_cast<char*>(name));
+        lock = new Semaphore(const_cast<char*>(name), 1);
         nEntry = n;
         count = 0;
         table = new DATA * [n];
@@ -41,7 +41,7 @@ public:
     int add(DATA* p)
     {
         int result = -1;
-        lock->Acquire();
+        lock->P();
         for (int i = 0; i < nEntry; i++)
             if (table[i] == NULL) {
                 result = i;
@@ -49,7 +49,7 @@ public:
                 count++;
                 break;
             }
-        lock->Release();
+        lock->V();
         return result;
     }
 
@@ -59,14 +59,14 @@ public:
     {
         ASSERT(index >= 0 && index < nEntry && "Index out of range");
         bool removed = false;
-        lock->Acquire();
+        lock->P();
         if (table[index] != NULL) {
             delete table[index];
             table[index] = NULL;
             count--;
             removed = true;
         }
-        lock->Release();
+        lock->V();
         return removed;
     }
 
@@ -74,16 +74,16 @@ public:
     {
         ASSERT(index >= 0 && index < nEntry && "Index out of range")
             DATA* result = NULL;
-        lock->Acquire();
+        lock->P();
         result = table[index];
-        lock->Release();
+        lock->V();
         return result;
     }
 
     int size() { return nEntry; }
 
 private:
-    Lock* lock;
+    Semaphore* lock;
     int nEntry;
     int count;
     DATA** table;
