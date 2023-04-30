@@ -80,7 +80,7 @@ bool Process::isOpenFile(const char* name) {
     
     bool result = false;
     // process file table is now handling console in and out so file start from
-    for (int i = 0; i < MAX_OPEN_FILES; i++) {
+    for (int i = 2; i < MAX_OPEN_FILES; i++) {
         OpenFile* file = kernel->currentThread->process->getFile(i);
         if (file && strcmp(file->filePath(), full_path) == 0) {
             result = true;
@@ -105,4 +105,42 @@ void Process::start(Process* p)
     p->main_thread->space->RestoreState();
     p->setState(Running);
     kernel->machine->Run();
+}
+
+Process* Process::createProcess(Process* p, Thread* t, const char* name){
+    if(kernel->pTable->checkFreeSlot()){
+        return new Process(p, t,name);
+    }
+    DEBUG(dbgProc, "Full process\n");
+    return NULL;
+}
+
+void Process::JoinWait(int joinid){
+    if (joinid != -1) return;
+    this->joinid = joinid;
+    joinsem->P();
+}
+
+void Process::ExitWait(){
+    if(numwait>0){
+        isExit =1;
+        exitsem->P();
+    }
+}
+void Process::ExitRelease() {
+    if (numwait == 0 && isExit == 1)
+        exitsem->V();
+}
+
+
+void Process::JoinRelease(int joinid, int exitCode) {
+    if (this->joinid != joinid) return;
+    this->joinid = -1;
+    this->exitCode = exitCode;
+    this->joinsem->V();
+}
+
+void Process::DecNumWait() {
+    if (this->numwait > 0)
+        --this->numwait;
 }
