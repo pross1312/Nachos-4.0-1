@@ -52,6 +52,12 @@ public:
         lock->V();
         return result;
     }
+    bool checkFreeSlot(){
+        if(count>nEntry){
+            return 0;
+        }
+        return 1;
+    }
 
     // remove will free the data at that position
     // return true we did remove something
@@ -81,7 +87,13 @@ public:
     }
 
     int size() { return nEntry; }
-
+    
+    bool checkID(SpaceId id){
+        if(table[id]==NULL){
+            return 0;
+        }
+        return 1;
+    }
 private:
     Semaphore* lock;
     int nEntry;
