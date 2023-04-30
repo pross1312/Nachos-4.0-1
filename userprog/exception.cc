@@ -58,6 +58,7 @@
 //----------------------------------------------------------------------
 
 
+
 void ExceptionHandler(ExceptionType which)
 {
     int type = kernel->machine->ReadRegister(2);
@@ -68,16 +69,7 @@ void ExceptionHandler(ExceptionType which)
     case SyscallException:
         switch (type) {
 
-        case SC_Exit: {
-            DEBUG(dbgSys, "Exit program...");
-            int status = kernel->machine->ReadRegister(4);
-            if (status == 0)
-                cout << "Exit normal. " << endl;
-            else
-                cout << "Exit with an error code " << status << endl;
-            SysHalt();
-            ASSERTNOTREACHED();
-        }
+        
 
         case SC_Halt: {
             DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
@@ -314,15 +306,93 @@ void ExceptionHandler(ExceptionType which)
             readMemUntil(name, vAddr, '\0', MAX_OPEN_FILE_NAME);
             AddrSpace* space = new AddrSpace;
             if (space->Load(name)) {
-                cout << "Create " << name << "\n";
                 Thread* t = new Thread(name);
                 t->space = space;
-                Process* p = new Process(kernel->currentThread->process, t, name);
+                Process* p= Process::createProcess(kernel->currentThread->process, t, name);
+                int id = -1;
+                if(p!=NULL){
+                    id=p->getId();
+                    DEBUG(dbgSys, "Create process " <<name<< " with ID: " << id  << endl);
+                }
+                kernel->machine->WriteRegister(2, id);
+            }else{
+                DEBUG(dbgSys, "Can't load AddrSpace\n");
+                kernel->machine->WriteRegister(2, -1);
             }
             delete[] name;
             return advancePC();
         }
+        case SC_Join: {
+            int iD = kernel->machine->ReadRegister(4);
+            if (iD<0 || iD >=MAX_RUNNING_PROCESS){
+                DEBUG(dbgSys, "Out of allowed quantity\n");
+                kernel->machine->WriteRegister(2, -1);
+                return advancePC();
+            }
+            if(!kernel->pTable->checkID(iD)){
+                DEBUG(dbgSys, "No process\n");
+                kernel->machine->WriteRegister(2, -1);
+                return advancePC();
+            }
+            SpaceId processID = -1;
+            for (int i=0;i<MAX_RUNNING_PROCESS;i++){
+                if(!kernel->pTable->checkID(i)) continue;
+                if(kernel->pTable->get(i)->getThread() == kernel->currentThread){
+                    processID =i;
+                    break;
+                }
+            }
+            if (processID == -1) {
+                DEBUG(dbgSys, "Has no parent\n");
+                kernel->machine->WriteRegister(2, -1);
+                return advancePC();
+            }
+            if (kernel->pTable->get(iD)->getParent()->getId() != processID) {
+                DEBUG(dbgSys, "Has no parent\n");
+                kernel->machine->WriteRegister(2, -1);
+                return advancePC();
+            }
 
+            int exitCode = kernel->pTable->get(processID)->getExitCode();
+            kernel->machine->WriteRegister(2, exitCode);
+            return advancePC();
+        }
+        case SC_Exit: {
+            int exitCode = kernel->machine->ReadRegister(4);
+            int processID = -1;
+            for (int i = 0; i < MAX_RUNNING_PROCESS; ++i) {
+                if(!kernel->pTable->checkID(i)) continue;
+                if(kernel->pTable->get(i)->getThread() == kernel->currentThread){
+                    processID =i;
+                    break;
+                }
+            }
+            if (processID == -1) {
+                DEBUG(dbgSys, "Has no parent\n");
+                kernel->machine->WriteRegister(2, -1);
+                return advancePC();
+            }
+            int parentID = kernel->pTable->get(processID)->getParent()->getId();
+            kernel->pTable->get(processID)->ExitWait();
+
+            if (parentID == -1) {
+                kernel->interrupt->Halt();
+            } else {
+                kernel->pTable->get(processID)->JoinRelease(processID, exitCode);
+                kernel->pTable->get(processID)->DecNumWait();
+                kernel->pTable->get(processID)->ExitRelease();
+
+                kernel->pTable->remove(processID);
+                kernel->currentThread->Finish();
+                kernel->machine->WriteRegister(2, 0);
+                return advancePC();
+            }
+
+
+
+            // kernel->machine->WriteRegister(2, -1);
+            // return advancePC();
+        }
         default:
             cerr << "Unexpected system call " << type << "\n";
             break;
