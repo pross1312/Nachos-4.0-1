@@ -80,13 +80,11 @@ Semaphore::P()
 
     // disable interrupts
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
-
     while (value == 0) { 		// semaphore not available
         queue->Append(currentThread);	// so go to sleep
         currentThread->Sleep(FALSE);
     }
     value--; 			// semaphore available, consume its value
-
     // re-enable interrupts
     (void)interrupt->SetLevel(oldLevel);
 }
@@ -111,7 +109,7 @@ Semaphore::V()
         kernel->scheduler->ReadyToRun(queue->RemoveFront());
     }
     value++;
-
+    
     // re-enable interrupts
     (void)interrupt->SetLevel(oldLevel);
 }

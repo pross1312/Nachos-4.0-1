@@ -55,7 +55,8 @@ public:
     // close the file
     ~OpenFile() {
         Close(file);
-        delete[] absolutePath;
+        if (absolutePath != NULL)
+            free(absolutePath);
         absolutePath = NULL;
     }
 

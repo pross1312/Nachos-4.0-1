@@ -45,13 +45,8 @@
 const int MAX_OPEN_FILES = 20;
 class FileSystem {
 public:
-    FileSystem() {
-        for (int i = 0; i < MAX_OPEN_FILES; i++)
-            Open_Files[i] = NULL;
-    }
+    FileSystem() {}
     ~FileSystem() {
-        for (int i = 0; i < MAX_OPEN_FILES; i++)
-            delete Open_Files[i];
     }
 
     bool Create(char* name) {
@@ -61,65 +56,24 @@ public:
         return TRUE;
     }
 
-    // find empty slot and store openfile
-    int add(OpenFile* f) {
-        // 0 and 1 for console input/output
-        for (int i = 2; i < MAX_OPEN_FILES; i++)
-            if (Open_Files[i] == NULL) {
-                DEBUG(dbgFile, "Add open file successfully: slot " << i);
-                Open_Files[i] = f;
-                return i;
-            }
-        DEBUG(dbgFile, "Add open file error: no available space.");
-        return -1;
-    }
 
-    bool Close(int id) {
-        OpenFile* file = Open_Files[id];
-        if (!file) {
-            DEBUG(dbgFile, "File is not openning id: " << id);
-            return false;
-        }
-        DEBUG(dbgFile, "Successfully close file id: " << id);
-        Open_Files[id] = NULL;
-        delete file;
-        return true;
-    }
 
     // method for open file syscall....
-    int Open(char* name, int t) {
+    OpenFile* Open(char* name, int t) {
         if (t == SOCKET) {
             DEBUG(dbgFile, "Can't open file with socket type.");
-            return -1;
+            return NULL;
         }
         int fileDescriptor = OpenForReadWrite(name, FALSE);
 
         if (fileDescriptor == -1) {
             DEBUG(dbgFile, "Unable to open file " << name);
-            return -1;
+            return NULL;
         }
         OpenFile* file = new OpenFile(fileDescriptor, t, name);
-        int result = add(file);
-        if (result != -1) {
-            DEBUG(dbgFile, "Open file " << name << " type " << t << " successfully.");
-        }
-        return result;
+        return file;
     }
 
-    bool isOpen(char* name) {
-        char* full_path = realpath(name, NULL);
-        if (full_path == NULL) {
-            DEBUG(dbgFile, "Check open file error: can't find full path.");
-            return false;
-        }
-        for (int i = 2; i < MAX_OPEN_FILES; i++)
-            if (Open_Files[i] != NULL && strcmp(full_path, Open_Files[i]->filePath()) == 0) {
-                DEBUG(dbgFile, "File " << name << " is open.")
-                    return true;
-            }
-        DEBUG(dbgFile, "File " << name << " isn't open.");
-        return false;
-    }
 
     OpenFile* Open(char* name) {
         int fileDescriptor = OpenForReadWrite(name, FALSE);
@@ -128,21 +82,11 @@ public:
         return new OpenFile(fileDescriptor);
     }
 
-    OpenFile* get(int id) {
-        ASSERT(id < MAX_OPEN_FILES && id > 1);
-        return Open_Files[id];
-    }
-
     bool Remove(char* name) {
-        if (isOpen(name)) {
-            DEBUG(dbgFile, "Can't remove open file.")
-                return false;
-        }
         return Unlink(name) == 0;
     }
 
 private:
-    OpenFile* Open_Files[MAX_OPEN_FILES];
 };
 
 #else // FILESYS
