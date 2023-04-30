@@ -18,7 +18,7 @@
 
 #include "copyright.h"
 #include "post.h"
-
+#include "main.h"
 //----------------------------------------------------------------------
 // Mail::Mail
 //      Initialize a single mail message, by concatenating the headers to
