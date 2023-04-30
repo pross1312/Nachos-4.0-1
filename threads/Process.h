@@ -17,6 +17,8 @@ class Table;
 enum ProcessState {
     New = 10, Running, Ready, Waiting, Terminated, Zombie
 };
+enum ProcessStatus { PROCESS_JUST_CREATED, PROCESS_RUNNING, PROCESS_READY, 
+PROCESS_BLOCKED, PROCESS_ZOMBIE }; 
 
 class Process
 {
@@ -28,7 +30,15 @@ public:
     int          getId() { return pid; }
     ProcessState getState() { return state;  }
     void         setState(ProcessState s) { state = s; }
+    Thread*      getThread(){ return main_thread;}
+    Process*     getParent(){return parent;}
+    int          getExitCode(){ return exitCode;}
 
+    void       DecNumWait();
+    void       ExitRelease();
+    void       JoinRelease(int joinid, int joinexitcode);
+    void       ExitWait();
+    void       JoinWait(int joinid);
     bool       addChild(Process* child);
     OpenFile*  getFile(int id);
     int        addOpenFile(OpenFile* file);
@@ -38,8 +48,8 @@ public:
     SynchConsoleInput*  getConsoleInput() { return procConsoleIn; }
     SynchConsoleOutput* getConsoleOutput() { return procConsoleOut; }
 
-
-
+    static Process* createProcess(Process* p, Thread* t, const char* name);
+    
 private:
     static void start(Process*); // use to start process by fork
 
@@ -49,7 +59,7 @@ private:
     SynchConsoleOutput* procConsoleOut;
     Table<OpenFile>* fTable; 
 
-
+    int exitCode;
     int pid;
     ProcessState state;
     char* name;
@@ -57,6 +67,11 @@ private:
     Thread* main_thread;
     Process* parent;
     List<Process*>* children;
+    Semaphore* joinsem;
+    SpaceId joinid;
+    int numwait;
+    int isExit;
+    Semaphore* exitsem;
 
     Lock* lock;
 };
