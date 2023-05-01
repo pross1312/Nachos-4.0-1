@@ -1,10 +1,12 @@
 #include "synch.h"
 
-#define MAX_SIZE 50
+#define MAX_SIZE_NAME 50
+#define MAX_SEMAPHORE 10
+
 class Sema {
 private:
     Semaphore *_sem;
-    char _name[MAX_SIZE];
+    char _name[MAX_SIZE_NAME];
 public:
     Sema();
     ~Sema();

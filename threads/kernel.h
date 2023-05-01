@@ -21,9 +21,7 @@
 #include "machine.h"
 #include "Table.h"
 #include "Process.h"
-
-#define MAX_RUNNING_PROCESS 20
-#define MAX_OPEN_FILES 20
+#include "semaphore.h"
 
 class PostOfficeInput;
 class PostOfficeOutput;
@@ -65,7 +63,7 @@ class Kernel {
 
     MemManager *memory_manager;
     Table<Process>* pTable;
-    
+    Table<Sema>*    sTable;    
     int hostName;               // machine identifier
 
   private:

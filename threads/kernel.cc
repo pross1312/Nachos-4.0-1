@@ -117,6 +117,8 @@ Kernel::Initialize() {
     // memory manager for multiprogramming
     memory_manager = new MemManager();
     pTable = new Table<Process>(MAX_RUNNING_PROCESS, "processes management");
+    sTable = new Table<Sema>(MAX_SEMAPHORE, "user semaphore management");
+
 
     interrupt->Enable();
 }

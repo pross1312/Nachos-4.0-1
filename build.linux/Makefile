@@ -286,7 +286,8 @@ THREAD_C = ../threads/alarm.cc\
 	../threads/thread.cc\
 	../threads/Mem_Manager.cc\
 	../threads/Process.cc\
-	../threads/semaphore.h
+	../threads/semaphore.cc
+
 THREAD_O = alarm.o kernel.o main.o scheduler.o synch.o thread.o Mem_Manager.o Process.o semaphore.o
 
 USERPROG_H = ../userprog/addrspace.h\

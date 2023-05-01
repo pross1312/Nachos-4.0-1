@@ -312,7 +312,7 @@ void ExceptionHandler(ExceptionType which)
             int vAddr = kernel->machine->ReadRegister(5);
             // this memory will be freed when the process is destroyed
             char** argv = new char*[argc];
-            DEBUG(dbgSys, "Executing process with " << argc << " arguements");
+            DEBUG(dbgSys, "Executing process with " << argc << " arguements at address " << vAddr);
              
             char arg[200];
             bzero(arg, 200);

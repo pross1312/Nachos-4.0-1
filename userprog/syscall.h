@@ -43,6 +43,10 @@
 #define SC_Send 47
 #define SC_SReceive 48
 #define SC_SClose 49
+#define SC_CreateSemaphore 30
+#define SC_Wait 31
+#define SC_Signal 32
+
 
 #define SC_Add		39
 
@@ -179,6 +183,9 @@ int Seek(int position, OpenFileId id);
  * Return 1 on success, negative error code on failure
  */
 int Close(OpenFileId id);
+
+
+int CreateSemaphore(char* name);
 
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
