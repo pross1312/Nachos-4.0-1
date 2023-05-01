@@ -352,7 +352,7 @@ void ExceptionHandler(ExceptionType which)
                 kernel->machine->WriteRegister(2, -1);
                 return advancePC();
             }
-
+            kernel->pTable->get(processID)->JoinWait(iD);
             int exitCode = kernel->pTable->get(processID)->getExitCode();
             kernel->machine->WriteRegister(2, exitCode);
             return advancePC();
@@ -372,12 +372,13 @@ void ExceptionHandler(ExceptionType which)
                 kernel->machine->WriteRegister(2, -1);
                 return advancePC();
             }
-            int parentID = kernel->pTable->get(processID)->getParent()->getId();
+            Process* parent = kernel->pTable->get(processID)->getParent();
             kernel->pTable->get(processID)->ExitWait();
 
-            if (parentID == -1) {
+            if (parent == NULL) {
                 kernel->interrupt->Halt();
             } else {
+                int parentID = parent->getId();
                 kernel->pTable->get(processID)->JoinRelease(processID, exitCode);
                 kernel->pTable->get(processID)->DecNumWait();
                 kernel->pTable->get(processID)->ExitRelease();
