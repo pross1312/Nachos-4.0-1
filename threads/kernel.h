@@ -65,7 +65,7 @@ class Kernel {
 
     MemManager *memory_manager;
     Table<Process>* pTable;
-    
+    Table<Sema>* sTable;
     int hostName;               // machine identifier
 
   private:
