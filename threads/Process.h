@@ -23,23 +23,23 @@ PROCESS_BLOCKED, PROCESS_ZOMBIE };
 class Process
 {
 public:
-    Process(Process* p, Thread* t, const char* name);
     ~Process();
 
-    const char*  getName() { return name; }
-    int          getId() { return pid; }
-    ProcessState getState() { return state;  }
     void         setState(ProcessState s) { state = s; }
-    Thread*      getThread(){ return main_thread;}
-    Process*     getParent(){return parent;}
-    int          getExitCode(){ return exitCode;}
+    const char*  getName()     { return name; }
+    int          getId()       { return pid; }
+    ProcessState getState()    { return state;  }
+    Thread*      getThread()   { return main_thread;}
+    Process*     getParent()   { return parent;}
+    int          getExitCode() { return exitCode;}
 
-    void       DecNumWait();
+    // void       DecNumWait();
     void       ExitRelease();
     void       JoinRelease(int joinid, int joinexitcode);
     void       ExitWait();
     void       JoinWait(int joinid);
-    bool       addChild(Process* child);
+    void       addChild(Process* child);
+    void       removeChild(Process* child);
     OpenFile*  getFile(int id);
     int        addOpenFile(OpenFile* file);
     bool       isOpenFile(const char* name);
@@ -51,6 +51,8 @@ public:
     static Process* createProcess(Process* p, Thread* t, const char* name);
     
 private:
+    Process(Process* p, Thread* t, const char* name);
+    friend Process* createProcess(Process* p, Thread* t, const char* name);
     static void start(Process*); // use to start process by fork
 
 
@@ -73,7 +75,7 @@ private:
     int isExit;
     Semaphore* exitsem;
 
-    Lock* lock;
+    Semaphore* lock;
 };
 
 

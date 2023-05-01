@@ -1,5 +1,6 @@
 #include "main.h"
 #include "Process.h"
+#include "debug.h"
 
 // this will duplicate the name so free it if you allocate that array
 Process::Process(Process *p, Thread *t, const char* name)
@@ -12,9 +13,14 @@ Process::Process(Process *p, Thread *t, const char* name)
     this->main_thread  = t;
     this->fTable       = new Table<OpenFile>(MAX_OPEN_FILES, "open files management");
     this->children     = new List<Process*>;
-    this->lock         = new Lock("process synchronizer");
+    this->lock         = new Semaphore("process synchronizer", 1);
     this->space        = t->space;
+    this->joinsem      = new Semaphore("join process semaphore", 0);
+    this->exitsem      = new Semaphore("exit process semaphore", 0);
+    this->exitCode     = -1;
+    this->joinid       = -1;
     t->process         = this;
+
 
     // process console input and output
     // for now just set them to be kernel input and output
@@ -22,8 +28,7 @@ Process::Process(Process *p, Thread *t, const char* name)
     procConsoleOut = kernel->synchConsoleOut;
 
 
-    DEBUG(dbgProc, "Create new process " << " id " << pid << " name " << main_thread->getName() << "\n");
-    DEBUG(dbgProc, "Thread parent " << (p == NULL ? "None" : p->getName()) << "\n");
+    DEBUG(dbgProc, "Create new process " << this->name << " id " << this->pid << " parent " << (parent == NULL ? "NULL" : parent->getName()));
 
     // check if this is initProcess or not
     // if pid == 0 then it's initProcess, we won't put in in waiting queue but run it directly
@@ -32,7 +37,7 @@ Process::Process(Process *p, Thread *t, const char* name)
         main_thread->space->Execute(); 
     }
     else {
-        ASSERT(p->addChild(this));
+        p->addChild(this);
         main_thread->Fork((VoidFunctionPtr)Process::start, this);
     }
 }
@@ -43,16 +48,26 @@ Process::~Process()
     // but for addrspace ...we will delete it
     delete this->lock;
     delete this->space;
+    this->main_thread->space = NULL;
     delete this->fTable;
     delete this->children;
+    delete this->joinsem;
+    delete this->exitsem;
     free(this->name);
 }
 
-bool Process::addChild(Process* child) {
-    if (children->IsInList(child))
-        return false;
+void Process::addChild(Process* child) {
+    this->lock->P();
+    ASSERT(!children->IsInList(child));
     children->Append(child);
-    return true;
+    this->lock->V();
+}
+
+void Process::removeChild(Process* child) {
+    lock->P();
+    ASSERT(children->IsInList(child));
+    children->Remove(child);
+    lock->V();
 }
 
 int Process::addOpenFile(OpenFile* file) {
@@ -67,7 +82,6 @@ int Process::addOpenFile(OpenFile* file) {
 
 bool Process::closeOpenFile(int index) {
     ASSERT(index >= 2 && index < MAX_OPEN_FILES);
-    bool result = false;
     return fTable->remove(index);
 }
 
@@ -100,7 +114,7 @@ OpenFile* Process::getFile(int id) {
 
 void Process::start(Process* p)
 {
-    DEBUG(dbgProc, "Starting process " << (int) p->getName() << " " << p->getName() << " id " << p->getId() << "\n");
+    DEBUG(dbgProc, "Starting process " << p->getName() << " id " << p->getId() << "\n");
     p->main_thread->space->InitRegisters();
     p->main_thread->space->RestoreState();
     p->setState(Running);
@@ -109,38 +123,44 @@ void Process::start(Process* p)
 
 Process* Process::createProcess(Process* p, Thread* t, const char* name){
     if(kernel->pTable->checkFreeSlot()){
-        return new Process(p, t,name);
+        return new Process(p, t, name);
     }
-    DEBUG(dbgProc, "Full process\n");
+    DEBUG(dbgProc, "Full process");
     return NULL;
 }
 
 void Process::JoinWait(int joinid){
-    if (joinid != -1) return;
+    if (joinid == -1) return;
     this->joinid = joinid;
     joinsem->P();
 }
 
 void Process::ExitWait(){
-    if(numwait>0){
-        isExit =1;
+    if(children->NumInList() > 0){
+        isExit = 1;
         exitsem->P();
     }
 }
+// 1 -> 2 -> 3
+// 2: exit
+// 2 doi con cua exit het 
+
+
 void Process::ExitRelease() {
-    if (numwait == 0 && isExit == 1)
+    if (children->NumInList() == 0 && isExit == 1)
         exitsem->V();
 }
 
 
 void Process::JoinRelease(int joinid, int exitCode) {
-    if (this->joinid != joinid) return;
+    // this means that parent isn't waiting for this child or something went horribly wrong
+    if (this->joinid != joinid) return; 
     this->joinid = -1;
     this->exitCode = exitCode;
     this->joinsem->V();
 }
 
-void Process::DecNumWait() {
-    if (this->numwait > 0)
-        --this->numwait;
-}
+// void Process::DecNumWait() {
+//     if (this->numwait > 0)
+//         --this->numwait;
+// }

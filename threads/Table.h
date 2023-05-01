@@ -16,10 +16,10 @@ class Table
 {
 public:
     Table() {}
-    Table(int n, char const* name)
+    Table(int n, char const* debugname)
     {
 
-        lock = new Semaphore(const_cast<char*>(name), 1);
+        lock = new Semaphore(const_cast<char*>(debugname), 1);
         nEntry = n;
         count = 0;
         table = new DATA * [n];

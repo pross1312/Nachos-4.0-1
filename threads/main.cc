@@ -285,7 +285,7 @@ main(int argc, char** argv) {
         ASSERT(space != (AddrSpace*)NULL);
         if (space->Load(userProgName)) {  // load the program into the space
             kernel->currentThread->space = space; // set init process code
-            Process* init = new Process(NULL, kernel->currentThread, "initProcess");
+            Process* init = Process::createProcess(NULL, kernel->currentThread, "initProcess");
             ASSERTNOTREACHED();
         }
         delete space;

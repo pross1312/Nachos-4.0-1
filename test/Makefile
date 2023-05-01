@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments test cat delete concatenate copy createfile echoclient fileclient
+PROGRAMS = add halt shell matmult sort segments test cat delete concatenate copy createfile echoclient fileclient file0 file1 file2
 endif
 
 all: $(PROGRAMS)
@@ -126,6 +126,24 @@ echoclient.o: echoclient.c
 echoclient: echoclient.o start.o
 	$(LD) $(LDFLAGS) start.o echoclient.o -o echoclient.coff
 	$(COFF2NOFF) echoclient.coff echoclient
+
+file0.o: file0.c
+	$(CC) $(CFLAGS) -c file0.c
+file0: file0.o start.o
+	$(LD) $(LDFLAGS) start.o file0.o -o file0.coff
+	$(COFF2NOFF) file0.coff file0
+
+file1.o: file1.c
+	$(CC) $(CFLAGS) -c file1.c
+file1: file1.o start.o
+	$(LD) $(LDFLAGS) start.o file1.o -o file1.coff
+	$(COFF2NOFF) file1.coff file1
+
+file2.o: file2.c
+	$(CC) $(CFLAGS) -c file2.c
+file2: file2.o start.o
+	$(LD) $(LDFLAGS) start.o file2.o -o file2.coff
+	$(COFF2NOFF) file2.coff file2
 
 fileclient.o: fileclient.c
 	$(CC) $(CFLAGS) -c fileclient.c
