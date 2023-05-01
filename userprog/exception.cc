@@ -34,7 +34,6 @@
 
 
 
-
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -84,7 +83,7 @@ void ExceptionHandler(ExceptionType which)
             int vAddr = kernel->machine->ReadRegister(4);
             char* fileName = new char[MAX_OPEN_FILE_NAME + 1];
             bzero(fileName, MAX_OPEN_FILE_NAME + 1);
-            if (readMemUntil(fileName, vAddr, '\0', MAX_OPEN_FILE_NAME)) {
+            if (readMemUntil(fileName, vAddr, '\0', MAX_OPEN_FILE_NAME) != -1) {
                 kernel->machine->WriteRegister(2, SYS_Remove(fileName));
             }
             else {
@@ -108,7 +107,7 @@ void ExceptionHandler(ExceptionType which)
             int virAddr = kernel->machine->ReadRegister(4);
             char* fileName = new char[MAX_OPEN_FILE_NAME + 1];
             bzero(fileName, MAX_OPEN_FILE_NAME + 1);
-            if (readMemUntil(fileName, virAddr, '\0', MAX_OPEN_FILE_NAME))
+            if (readMemUntil(fileName, virAddr, '\0', MAX_OPEN_FILE_NAME) != -1)
                 kernel->machine->WriteRegister(2, SYS_Create(fileName));
             else {
                 DEBUG(dbgSys, "Read memory error.");
@@ -124,7 +123,7 @@ void ExceptionHandler(ExceptionType which)
             bzero(fileName, MAX_OPEN_FILE_NAME + 1);
             int virAddr = kernel->machine->ReadRegister(4);
             int type = kernel->machine->ReadRegister(5);
-            if (readMemUntil(fileName, virAddr, '\0', MAX_OPEN_FILE_NAME))
+            if (readMemUntil(fileName, virAddr, '\0', MAX_OPEN_FILE_NAME) != -1)
                 kernel->machine->WriteRegister(2, SYS_Open(fileName, type));
             else {
                 DEBUG(dbgSys, "Read memory error.");
@@ -220,9 +219,15 @@ void ExceptionHandler(ExceptionType which)
             int port = kernel->machine->ReadRegister(6);
             char* ip = new char[MAX_IP_ADDR_SIZE];
             bzero(ip, MAX_IP_ADDR_SIZE);
-            ASSERT(readMemUntil(ip, vAddr, '\0', MAX_IP_ADDR_SIZE));
-            int result = SYS_SocketConnect(socketID, ip, port);
-            kernel->machine->WriteRegister(2, result);
+
+            if (readMemUntil(ip, vAddr, '\0', MAX_IP_ADDR_SIZE) != -1) {
+                int result = SYS_SocketConnect(socketID, ip, port);
+                kernel->machine->WriteRegister(2, result);
+            }
+            else {
+                DEBUG(dbgSys, "Read memory error.");
+                kernel->machine->WriteRegister(2, -1);
+            }
             delete[] ip;
             return advancePC();
         }
@@ -300,13 +305,73 @@ void ExceptionHandler(ExceptionType which)
 
             break;
         }
+
+        case SC_ExecV: {
+            int argc = kernel->machine->ReadRegister(4);
+            // this is address of the memory block store address of first argument
+            int vAddr = kernel->machine->ReadRegister(5);
+            // this memory will be freed when the process is destroyed
+            char** argv = new char*[argc];
+            DEBUG(dbgSys, "Executing process with " << argc << " arguements");
+             
+            char arg[200];
+            bzero(arg, 200);
+            for (int i = 0; i < argc; i++) {
+                int argAddr = 0;
+                if (readFromMem((char*)&argAddr, 4, vAddr) == false) {
+                    kernel->machine->WriteRegister(2, -1);
+                    for (int j = 0; j < i; j++)
+                        delete[] argv[j];
+                    delete[] argv;
+                    return advancePC();
+                }
+                int count = readMemUntil(arg, argAddr, '\0', 200);
+                if (count != -1) {
+                    // avoid wasting too much memory
+                    // this will also be freed by process destructor
+                    argv[i] = new char[count + 1];
+                    memcpy(argv[i], arg, count);
+                    argv[count] = '\0';
+                }
+                else {
+                    DEBUG(dbgSys, "Read memory error.");
+                    kernel->machine->WriteRegister(2, -1);
+                    for (int j = 0; j < i; j++)
+                        delete[] argv[j];
+                    delete[] argv;
+                    return advancePC();
+                }
+            }
+            int result = SYS_ExecV(argc, argv);
+            kernel->machine->WriteRegister(2, result);
+            if (result != -1) {
+                DEBUG(dbgSys, "Create process " << argv[0] << " successfully");
+            }
+            else {
+                DEBUG(dbgSys, "Create process fail");
+            }
+            return advancePC();
+        }
+
         case SC_Exec: {
             int vAddr = kernel->machine->ReadRegister(4);
             char* name = new char[MAX_OPEN_FILE_NAME + 1];
             bzero(name, MAX_OPEN_FILE_NAME + 1);
-            readMemUntil(name, vAddr, '\0', MAX_OPEN_FILE_NAME);
-            DEBUG(dbgSys, "Executing process with name " << name);
-            kernel->machine->WriteRegister(2, SYS_Exec(name));
+            if (readMemUntil(name, vAddr, '\0', MAX_OPEN_FILE_NAME) != -1) {
+                DEBUG(dbgSys, "Executing process with name " << name);
+                int result = SYS_Exec(name);
+                kernel->machine->WriteRegister(2, result);
+                if (result != -1) {
+                    DEBUG(dbgSys, "Create process " << name << " successfully");
+                }
+                else {
+                    DEBUG(dbgSys, "Create process " << name << " fail")
+                }
+            }
+            else {
+                DEBUG(dbgSys, "Read memory error.");
+                kernel->machine->WriteRegister(2, -1);
+            }
             delete[] name;
             return advancePC();
         }

@@ -14,21 +14,21 @@
 template<class DATA>
 class Table;
 
-enum ProcessState {
-    New = 10, Running, Ready, Waiting, Terminated, Zombie
-};
-enum ProcessStatus { PROCESS_JUST_CREATED, PROCESS_RUNNING, PROCESS_READY, 
-PROCESS_BLOCKED, PROCESS_ZOMBIE }; 
+// enum ProcessState {
+//     New = 10, Running, Ready, Waiting, Terminated, Zombie
+// };
+// enum ProcessStatus { PROCESS_JUST_CREATED, PROCESS_RUNNING, PROCESS_READY, 
+// PROCESS_BLOCKED, PROCESS_ZOMBIE }; 
 
 class Process
 {
 public:
     ~Process();
 
-    void         setState(ProcessState s) { state = s; }
+    // void         setState(ProcessState s) { state = s; }
     const char*  getName()     { return name; }
     int          getId()       { return pid; }
-    ProcessState getState()    { return state;  }
+    // ProcessState getState()    { return state;  }
     Thread*      getThread()   { return main_thread;}
     Process*     getParent()   { return parent;}
     int          getExitCode() { return exitCode;}
@@ -44,12 +44,16 @@ public:
     int        addOpenFile(OpenFile* file);
     bool       isOpenFile(const char* name);
     bool       closeOpenFile(int index);
+    char*      getArgv(int index)          { return (0 <= index && index < argc ? argv[index] : NULL); }
+    void       setArgv(char** argv)        { this->argv = argv; }
+    int        getArgc()                   { return argc; }
+    void       setArgc(int argc)           { this->argc = argc; }
 
-    SynchConsoleInput*  getConsoleInput() { return procConsoleIn; }
+    SynchConsoleInput*  getConsoleInput()  { return procConsoleIn; }
     SynchConsoleOutput* getConsoleOutput() { return procConsoleOut; }
 
     static Process* createProcess(Process* p, Thread* t, const char* name);
-    
+
 private:
     Process(Process* p, Thread* t, const char* name);
     friend Process* createProcess(Process* p, Thread* t, const char* name);
@@ -63,7 +67,7 @@ private:
 
     int exitCode;
     int pid;
-    ProcessState state;
+    // ProcessState state;
     char* name;
     AddrSpace* space;
     Thread* main_thread;
@@ -73,8 +77,11 @@ private:
     SpaceId joinid;
     int numwait;
     int isExit;
-    Semaphore* exitsem;
+    
+    char** argv;
+    int argc;
 
+    Semaphore* exitsem;
     Semaphore* lock;
 };
 

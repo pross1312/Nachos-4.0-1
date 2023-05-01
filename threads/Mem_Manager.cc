@@ -29,10 +29,10 @@ void MemManager::free(int index)
     lock->Release();
 }
 
-int MemManager::available()
+size_t MemManager::available()
 {
     lock->Acquire();
-    int result =  map->NumClear();
+    size_t result =  (size_t) map->NumClear();
     lock->Release();
     return result;
 }

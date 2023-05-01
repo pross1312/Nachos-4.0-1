@@ -7,7 +7,7 @@ Process::Process(Process *p, Thread *t, const char* name)
 {
     this->pid          = kernel->pTable->add(this); // add this process to processes table
     ASSERT(this->pid != -1);
-    this->state        = New;
+    // this->state        = New;
     this->name         = strdup(name);
     this->parent       = p;
     this->main_thread  = t;
@@ -19,6 +19,9 @@ Process::Process(Process *p, Thread *t, const char* name)
     this->exitsem      = new Semaphore("exit process semaphore", 0);
     this->exitCode     = -1;
     this->joinid       = -1;
+    this->isExit       = 0;
+    this->argv         = NULL;
+    this->argc         = 0;
     t->process         = this;
 
 
@@ -53,6 +56,11 @@ Process::~Process()
     delete this->children;
     delete this->joinsem;
     delete this->exitsem;
+    if (this->argv != NULL) {
+        for (int i = 0; i < argc; i++)
+            delete[] this->argv[i];
+        delete[] this->argv;
+    }
     free(this->name);
 }
 
@@ -117,11 +125,12 @@ void Process::start(Process* p)
     DEBUG(dbgProc, "Starting process " << p->getName() << " id " << p->getId() << "\n");
     p->main_thread->space->InitRegisters();
     p->main_thread->space->RestoreState();
-    p->setState(Running);
+    // p->setState(Running);
     kernel->machine->Run();
 }
 
-Process* Process::createProcess(Process* p, Thread* t, const char* name){
+
+Process* Process::createProcess(Process* p, Thread* t, const char* name) {
     if(kernel->pTable->checkFreeSlot()){
         return new Process(p, t, name);
     }
@@ -136,6 +145,7 @@ void Process::JoinWait(int joinid){
 }
 
 void Process::ExitWait(){
+    DEBUG(dbgProc, "Process " << name << " has " << children->NumInList() << " children left");
     if(children->NumInList() > 0){
         isExit = 1;
         exitsem->P();
@@ -147,8 +157,11 @@ void Process::ExitWait(){
 
 
 void Process::ExitRelease() {
-    if (children->NumInList() == 0 && isExit == 1)
+    DEBUG(dbgProc, "Number of child left: " << children->NumInList() << " want to exit " << (int)isExit);
+    if (children->NumInList() == 0 && isExit == 1) {
+        DEBUG(dbgProc, "Exit release called by process " << kernel->currentThread->process->getName() << " for this process " << name);
         exitsem->V();
+    }
 }
 
 

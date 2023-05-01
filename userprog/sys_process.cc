@@ -1,5 +1,34 @@
 #include "sys_process.h"
 
+// this will create process and pass arguments to it.
+// DON'T free the memory allocated for arguments, it will be done when this process is deleted
+int SYS_ExecV(int argc, char** argv) 
+{
+    if (argc < 1 || argv == NULL) {
+        DEBUG(dbgProc, "Can't use ExecV process with no arguments");
+        return -1;
+    }
+    AddrSpace* space = new AddrSpace;
+    char* name = argv[0];
+    if (space->Load(const_cast<char*>(name))) {
+        Thread* t = new Thread("User created process");
+        t->space = space;
+        Process* p = Process::createProcess(kernel->currentThread->process, t, name);
+        p->setArgv(argv);
+
+        int id = -1;
+        if(p != NULL) {
+            id = p->getId();
+            DEBUG(dbgProc, "Create process " << name << " with ID: " << id  << " and " << argc << " arguements");
+            return id;
+        }
+        DEBUG(dbgProc, "Unable to create process " << name);
+    }
+    else {
+        DEBUG(dbgProc, "Can't load AddrSpace\n");
+    }
+    return -1; 
+}
 
 int SYS_Exec(const char* name)
 {
@@ -18,7 +47,6 @@ int SYS_Exec(const char* name)
     }
     else {
         DEBUG(dbgProc, "Can't load AddrSpace\n");
-        kernel->machine->WriteRegister(2, -1);
     }
     return -1;
 }
@@ -56,6 +84,7 @@ bool SYS_Exit(int exitCode)
 
     // currently, a process will wait until it has no childs left in order to exit
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " is waiting until it has no child left");
+
     currentProcess->ExitWait();
     
 
@@ -78,12 +107,13 @@ bool SYS_Exit(int exitCode)
         // kernel->pTable->get(processID)->DecNumWait();
         // this line will be called so that parent process can check if parent process can exit or not
         // see implementation in process.cc for more info
-        kernel->pTable->get(processID)->ExitRelease();
+        DEBUG(dbgProc, "Call exit release for parent " << parent->getName());
+        parent->ExitRelease();
         
         // remove process from pTable and finish thread
-        DEBUG(dbgProc, "Remove process...");
-        kernel->pTable->remove(processID);
-        kernel->currentThread->Finish();
+        DEBUG(dbgProc, "Remove process " << currentProcess->getName() << " ...");
+        kernel->pTable->remove(currentProcess->getId());
+        currentProcess->getThread()->Finish();
         return true;
     }
     return false;

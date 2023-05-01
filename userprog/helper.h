@@ -5,16 +5,17 @@
 #include <stdio.h>
 
 
-bool readMemUntil(char* buffer, int vAddr, char end, int size) {
-    for (int i = 0; i < MAX_OPEN_FILE_NAME; i++) {
+int readMemUntil(char* buffer, int vAddr, char end, int size) {
+    int i = 0;
+    for (; i < size; i++) {
         int ch;
         if (!kernel->machine->ReadMem(vAddr + i, 1, &ch))
-            return false;
+            return -1;
         if (ch == end)
             break;
         buffer[i] = (char)ch;
     }
-    return true;
+    return i;
 }
 
 bool readFromMem(char* buffer, int size, int virAddr) {

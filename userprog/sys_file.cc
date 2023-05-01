@@ -9,37 +9,37 @@ int SYS_Create(char* name) {
 
 #ifdef FILESYS_STUB
     if (kernel->fileSystem->Create(name)) {
-        DEBUG(dbgSys, "Create file successfully." << name);
+        DEBUG(dbgFile, "Create file successfully." << name);
         return 0;
     }
 #else
     if (kernel->fileSystem->Create(name, 128)) {
-        DEBUG(dbgSys, "Create file successfully." << name);
+        DEBUG(dbgFile, "Create file successfully." << name);
         return 0;
     }
 #endif
-    DEBUG(dbgSys, "Can't create file." << name);
+    DEBUG(dbgFile, "Can't create file." << name);
     return -1;
 }
 
 
 int SYS_Seek(int position, OpenFileId id) {
     if (id <= 1 || id >= MAX_OPEN_FILES) {
-        DEBUG(dbgSys, "Invalid id: " << id);
+        DEBUG(dbgFile, "Invalid id: " << id);
         return -1;
     }
     OpenFile* file = kernel->currentThread->process->getFile(id);
     int length = file->Length();
-    DEBUG(dbgSys, "Length file: " << length << " seek position: " << position);
+    DEBUG(dbgFile, "Length file: " << length << " seek position: " << position);
     if (position > length || position < -1)
         return -1;
     if (position == -1)
         position = length;
     int result = file->Seek(position);
     if (result == -1) {
-        DEBUG(dbgSys, "Seek error.");
+        DEBUG(dbgFile, "Seek error.");
         if (file->type() == SOCKET) {
-            DEBUG(dbgSys, "Can't seek on socket.");
+            DEBUG(dbgFile, "Can't seek on socket.");
         }
     }
     return result;
@@ -53,15 +53,18 @@ int SYS_Remove(char* name) {
     }
     DEBUG(dbgFile, "File " << name << " isn't open, removing");
     if (kernel->fileSystem->Remove(name)) {
-        DEBUG(dbgSys, "Successfully remove " << name);
+        DEBUG(dbgFile, "Successfully remove " << name);
         return 0;
     }
     return -1;
 }
 
 int SYS_Open(char* name, int type) {
-    DEBUG(dbgSys, "Opening file " << name << "...");
+    DEBUG(dbgFile, "Opening file " << name << "...");
     OpenFile* file = kernel->fileSystem->Open(name, type);
+    if (file == NULL) {
+        return -1;
+    }
     int index = kernel->currentThread->process->addOpenFile(file);
     if (index == -1) {
         DEBUG(dbgFile, "Can't open file " << name << ", table is full");
@@ -74,7 +77,7 @@ int SYS_Open(char* name, int type) {
 
 int SYS_Read(char* buffer, int size, OpenFileId id) {
     if (id != Console_Input && (id <= 1 || id >= MAX_OPEN_FILES)) {
-        DEBUG(dbgSys, "Unable to read: invalid open file index " << id << ".");
+        DEBUG(dbgFile, "Unable to read: invalid open file index " << id << ".");
         return -1;
     }
     if (id == Console_Input) {
@@ -86,7 +89,7 @@ int SYS_Read(char* buffer, int size, OpenFileId id) {
                 break;
             buffer[i] = ch;
         }
-        DEBUG(dbgSys, "Read from console " << i << " bytes.");
+        DEBUG(dbgFile, "Read from console " << i << " bytes.");
         return i;
     }
     else {
@@ -94,14 +97,14 @@ int SYS_Read(char* buffer, int size, OpenFileId id) {
         if (file) {
             int result = file->Read(buffer, size);
             if (result != -1) {
-                DEBUG(dbgSys, "Read " << result << " bytes from file " << id);
+                DEBUG(dbgFile, "Read " << result << " bytes from file " << id);
             }
             else {
-                DEBUG(dbgSys, "Can't read from file " << file->filePath() << ", type: " << file->type());
+                DEBUG(dbgFile, "Can't read from file " << file->filePath() << ", type: " << file->type());
             }
             return result;
         }
-        DEBUG(dbgSys, "Can't open file to read.");
+        DEBUG(dbgFile, "Can't open file to read.");
     }
     return -1;
 }
@@ -112,7 +115,7 @@ int SYS_Write(char* buffer, int size, OpenFileId id) {
         return -1;
     }
     if (id == Console_Output) {
-        DEBUG(dbgSys, "Write " << buffer << " to console.");
+        DEBUG(dbgFile, "Write " << buffer << " to console.");
         for (int i = 0; i < size; i++) {
             kernel->currentThread->process->getConsoleOutput()->PutChar(buffer[i]);
         }
@@ -120,19 +123,19 @@ int SYS_Write(char* buffer, int size, OpenFileId id) {
     }
     else {
         OpenFile* file = kernel->currentThread->process->getFile(id);
-        DEBUG(dbgSys, "Write " << buffer << " to file " << id);
+        DEBUG(dbgFile, "Write " << buffer << " to file " << id);
         if (file) {
             int result = file->Write(buffer, size);
             if (result != -1) {
-                DEBUG(dbgSys, "Successfully write " << result << " bytes");
+                DEBUG(dbgFile, "Successfully write " << result << " bytes");
             }
             else {
-                DEBUG(dbgSys, "Can't write to file " << file->filePath() << ", type: " << file->type());
+                DEBUG(dbgFile, "Can't write to file " << file->filePath() << ", type: " << file->type());
             }
             return result;
         }
         else {
-            DEBUG(dbgSys, "Unable to write, file is not open.");
+            DEBUG(dbgFile, "Unable to write, file is not open.");
         }
     }
     return -1;
@@ -141,7 +144,7 @@ int SYS_Write(char* buffer, int size, OpenFileId id) {
 int SYS_Close(OpenFileId id) {
     DEBUG(dbgFile, "Closing file " << id);
     if (id <= 1 || id >= MAX_OPEN_FILES) {
-        DEBUG(dbgSys, "ID exceeds file descriptor array, id: " << id << ".");
+        DEBUG(dbgFile, "ID exceeds file descriptor array, id: " << id << ".");
         return -1;
     }
     if (kernel->currentThread->process->closeOpenFile(id))

@@ -117,7 +117,7 @@ AddrSpace::~AddrSpace()
 {
     DEBUG(dbgAddr, "Delete call, free " << numPages << " pages");
     for (size_t i = 0; i < numPages; i++) {
-        kernel->memory_manager->free(i);
+        kernel->memory_manager->free(pageTable[i].physicalPage);
     }
     delete[] pageTable;
     // delete[] stored_data;
@@ -208,11 +208,12 @@ void AddrSpace::initPageTable(size_t nPages)
 {
     DEBUG(dbgAddr, "Alloc " << nPages << " pages");
     DEBUG(dbgAddr, "Mem available: " << kernel->memory_manager->available());
-    ASSERT(nPages <= kernel->memory_manager->available() && "Don't have enough memory left"); 
+    ASSERT(nPages <= kernel->memory_manager->available()); // don't have enough memory
     pageTable = new TranslationEntry[nPages];
     for (size_t i = 0; i < nPages; i++) {
         int index = kernel->memory_manager->next_available();
         ASSERT(index != -1 && "?????");
+        DEBUG(dbgAddr, "Map vir " << i << " to " << index);
         pageTable[i].virtualPage = i;	// for now, virt page # = phys page #
         pageTable[i].physicalPage = index;
         pageTable[i].valid = TRUE;
@@ -239,7 +240,10 @@ AddrSpace::Load(char* fileName)
     if ((noffH.noffMagic != NOFFMAGIC) &&
         (WordToHost(noffH.noffMagic) == NOFFMAGIC))
         SwapHeader(&noffH);
-    ASSERT(noffH.noffMagic == NOFFMAGIC);
+    if (noffH.noffMagic != NOFFMAGIC) {
+        delete executable;
+        return false;
+    }
 
 #ifdef RDATA
     // how big is address space?
@@ -256,8 +260,12 @@ AddrSpace::Load(char* fileName)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= kernel->memory_manager->available());		// check we're not trying
+    if (numPages > kernel->memory_manager->available()) {
+        delete executable;
+        return false;
+    }		
     initPageTable(numPages); 
+    // check we're not trying
     // to run anything too big --
     // at least until we have
     // virtual memory
@@ -323,7 +331,6 @@ AddrSpace::Load(char* fileName)
         }
     }
 #endif
-
     delete executable;			// close file
     return TRUE;			// success
 }

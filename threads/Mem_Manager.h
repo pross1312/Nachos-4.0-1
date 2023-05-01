@@ -13,7 +13,7 @@ public:
 
     int next_available();
     void free(int index);    
-    int available();
+    size_t available();
 
 private:
     Lock* lock;
