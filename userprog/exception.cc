@@ -398,6 +398,73 @@ void ExceptionHandler(ExceptionType which)
             
             return advancePC();
         }
+        case SC_CreateSemaphore: 
+        {
+            DEBUG(dbgSys, "Create semaphore.");
+            char name[MAX_SIZE_NAME];
+            bzero(name, MAX_SIZE_NAME);
+            int virAddr = kernel->machine->ReadRegister(4);
+            int semval = kernel->machine->ReadRegister(5);
+            if (readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME)) {
+                Sema *semtest = new Sema;
+                semtest->Create(name, semval);
+                kernel->sTable->add(semtest);
+                kernel->machine->WriteRegister(2, 0);
+            }
+            else {
+                DEBUG(dbgSys, "Read Error. ");
+                kernel->machine->WriteRegister(2, -1);
+            }
+            return advancePC();
+        }
+        case SC_Wait:
+        {
+            DEBUG(dbgSys, "Wait. ");
+            char name[MAX_SIZE_NAME];
+            bzero(name, MAX_SIZE_NAME);
+            int virAddr = kernel->machine->ReadRegister(4);
+            if(readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME)) {
+                for (int i = 0; i < MAX_SEMAPHORE; i++) {
+                    if(!kernel->sTable->get(i))
+                        continue;
+                    if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
+                        kernel->sTable->get(i)->Wait();
+                }
+                }
+                kernel->machine->WriteRegister(2, 0);
+            }
+            
+            else {
+                DEBUG(dbgSys, "Read Error. ");
+                kernel->machine->WriteRegister(2, -1);
+
+            }
+            return advancePC();
+        }
+        case SC_Signal:
+        {
+            DEBUG(dbgSys, "Signal ");
+            char name[MAX_SIZE_NAME];
+            bzero(name, MAX_SIZE_NAME);
+            int virAddr = kernel->machine->ReadRegister(4);
+            if(readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME)) {
+                for (int i = 0; i < MAX_SEMAPHORE; i++) {
+                    if(!kernel->sTable->get(i))
+                        continue;
+                    if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
+                        kernel->sTable->get(i)->Signal();
+                }
+                }
+                kernel->machine->WriteRegister(2, 0);
+            }
+            
+            else {
+                DEBUG(dbgSys, "Read Error. ");
+                kernel->machine->WriteRegister(2, -1);
+
+            }
+            return advancePC();
+        }
         default:
             cerr << "Unexpected system call " << type << "\n";
             break;
