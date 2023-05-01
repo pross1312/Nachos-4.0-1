@@ -274,7 +274,8 @@ THREAD_H = ../threads/alarm.h\
 	../threads/thread.h\
 	../threads/Mem_Manager.h\
 	../threads/Table.h\
-	../threads/Process.h
+	../threads/Process.h\
+	../threads/semaphore.h
 
 THREAD_C = ../threads/alarm.cc\
 	../threads/kernel.cc\
@@ -284,9 +285,9 @@ THREAD_C = ../threads/alarm.cc\
 	../threads/synchlist.cc\
 	../threads/thread.cc\
 	../threads/Mem_Manager.cc\
-	../threads/Process.cc
-
-THREAD_O = alarm.o kernel.o main.o scheduler.o synch.o thread.o Mem_Manager.o Process.o
+	../threads/Process.cc\
+	../threads/semaphore.h
+THREAD_O = alarm.o kernel.o main.o scheduler.o synch.o thread.o Mem_Manager.o Process.o semaphore.o
 
 USERPROG_H = ../userprog/addrspace.h\
 	../userprog/syscall.h\
