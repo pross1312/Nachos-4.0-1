@@ -129,19 +129,23 @@ Kernel::Initialize() {
 //----------------------------------------------------------------------
 
 Kernel::~Kernel() {
-    delete interrupt;
     delete pTable;
     delete memory_manager;
+    delete sTable;
+
     delete postOfficeOut;
     delete postOfficeIn;
     delete fileSystem;
     delete synchDisk;
     delete synchConsoleOut;
     delete synchConsoleIn;
+
+
     delete machine;
     delete alarm;
     delete stats;
     delete scheduler;
+    delete interrupt;
     Exit(0);
 }
 

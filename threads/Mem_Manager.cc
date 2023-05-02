@@ -10,8 +10,8 @@ MemManager::MemManager()
 
 MemManager::~MemManager()
 {
-    delete lock;
     delete map;
+    delete lock;
 }
 
 int MemManager::next_available()

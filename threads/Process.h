@@ -44,16 +44,17 @@ public:
     int        addOpenFile(OpenFile* file);
     bool       isOpenFile(const char* name);
     bool       closeOpenFile(int index);
-    char*      getArgv(int index)          { return (0 <= index && index < argc ? argv[index] : NULL); }
+    char**     getArgv()                   { return argv; }
     void       setArgv(char** argv)        { this->argv = argv; }
     int        getArgc()                   { return argc; }
     void       setArgc(int argc)           { this->argc = argc; }
+    int        getArgVirAddr()             { return this->vir_arg_addr; }
 
     SynchConsoleInput*  getConsoleInput()  { return procConsoleIn; }
     SynchConsoleOutput* getConsoleOutput() { return procConsoleOut; }
 
     static Process* createProcess(Process* p, Thread* t, const char* name);
-
+    void initArgument();
 private:
     Process(Process* p, Thread* t, const char* name);
     friend Process* createProcess(Process* p, Thread* t, const char* name);
@@ -75,14 +76,15 @@ private:
     List<Process*>* children;
     Semaphore* joinsem;
     SpaceId joinid;
-    int numwait;
+    int vir_arg_addr; // this is address that point to the argv array
+    // int numwait;
     int isExit;
     
     char** argv;
     int argc;
 
     Semaphore* exitsem;
-    Semaphore* lock;
+    Lock* lock;
 };
 
 

@@ -1,6 +1,8 @@
 #include "main.h"
 #include "Process.h"
 #include "debug.h"
+#include "helper.h"
+
 
 // this will duplicate the name so free it if you allocate that array
 Process::Process(Process *p, Thread *t, const char* name)
@@ -13,15 +15,18 @@ Process::Process(Process *p, Thread *t, const char* name)
     this->main_thread  = t;
     this->fTable       = new Table<OpenFile>(MAX_OPEN_FILES, "open files management");
     this->children     = new List<Process*>;
-    this->lock         = new Semaphore("process synchronizer", 1);
+    this->lock         = new Lock("process synchronizer");
     this->space        = t->space;
     this->joinsem      = new Semaphore("join process semaphore", 0);
     this->exitsem      = new Semaphore("exit process semaphore", 0);
     this->exitCode     = -1;
     this->joinid       = -1;
     this->isExit       = 0;
-    this->argv         = NULL;
+
+    this->argv         = NULL; // char**
     this->argc         = 0;
+    this->vir_arg_addr = 0;
+
     t->process         = this;
 
 
@@ -57,25 +62,26 @@ Process::~Process()
     delete this->joinsem;
     delete this->exitsem;
     if (this->argv != NULL) {
-        for (int i = 0; i < argc; i++)
+        for (int i = 0; i < argc; i++) {
             delete[] this->argv[i];
+        }
         delete[] this->argv;
     }
     free(this->name);
 }
 
 void Process::addChild(Process* child) {
-    this->lock->P();
+    this->lock->Acquire();
     ASSERT(!children->IsInList(child));
     children->Append(child);
-    this->lock->V();
+    this->lock->Release();
 }
 
 void Process::removeChild(Process* child) {
-    lock->P();
+    lock->Acquire();
     ASSERT(children->IsInList(child));
     children->Remove(child);
-    lock->V();
+    lock->Release();
 }
 
 int Process::addOpenFile(OpenFile* file) {
@@ -125,7 +131,9 @@ void Process::start(Process* p)
     DEBUG(dbgProc, "Starting process " << p->getName() << " id " << p->getId() << "\n");
     p->main_thread->space->InitRegisters();
     p->main_thread->space->RestoreState();
-    // p->setState(Running);
+    if (p->getArgv() != NULL) {
+        p->initArgument();
+    }
     kernel->machine->Run();
 }
 
@@ -153,7 +161,7 @@ void Process::ExitWait(){
 }
 // 1 -> 2 -> 3
 // 2: exit
-// 2 doi con cua exit het 
+// 2 wait until all of its children exited
 
 
 void Process::ExitRelease() {
@@ -173,7 +181,35 @@ void Process::JoinRelease(int joinid, int exitCode) {
     this->joinsem->V();
 }
 
-// void Process::DecNumWait() {
-//     if (this->numwait > 0)
-//         --this->numwait;
-// }
+void Process::initArgument() {
+    int vir_stack = kernel->machine->ReadRegister(StackReg);
+    ASSERT(vir_stack % 4 == 0);
+    int size_argument_memory = argc * 4;
+    // for (int i = 0; i < argc; i++) {
+    //     int n = strlen(argv[i]);
+    //     size_argument_memory += (n + (4 - n % 4));
+    // }
+    // int temp_stack = vir_stack - size_argument_memory;
+
+    vir_arg_addr = vir_stack - argc * 4; 
+
+    // for (int i = 0; i < argc; i++) {
+    //     int n = strlen(argv[i]);
+    //     writeToMem(argv[i], n, temp_stack);
+    //     writeToMem((char*)&temp_stack, 4, vir_stack - ((argc - i) * 4));
+    //     temp_stack += n + (4 - n % 4);
+    // }
+
+    for (int i = argc-1; i >= 0; i--) {
+        int n_char = strlen(argv[i]);
+        int n_aligned_size = n_char + (4 - n_char % 4);
+        size_argument_memory += n_aligned_size;
+        ASSERT(n_aligned_size % 4 == 0);
+        ASSERT(vir_stack - size_argument_memory >= 0);
+        int arg_addr = vir_stack - size_argument_memory;
+        writeToMem((char*)&arg_addr, 4, vir_stack - ((argc - i) * 4)); 
+        writeToMem(argv[i], n_char, arg_addr);
+    }
+    kernel->machine->WriteRegister(StackReg, vir_stack - size_argument_memory);
+}
+

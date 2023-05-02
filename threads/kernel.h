@@ -63,11 +63,7 @@ class Kernel {
 
     MemManager *memory_manager;
     Table<Process>* pTable;
-<<<<<<< HEAD
     Table<Sema>*    sTable;    
-=======
-    Table<Sema>* sTable;
->>>>>>> c27f5cf9f1f08d940c679e911fa306952d9b8b76
     int hostName;               // machine identifier
 
   private:

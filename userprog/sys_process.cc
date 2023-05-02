@@ -14,11 +14,11 @@ int SYS_ExecV(int argc, char** argv)
         Thread* t = new Thread("User created process");
         t->space = space;
         Process* p = Process::createProcess(kernel->currentThread->process, t, name);
-        p->setArgv(argv);
-
         int id = -1;
         if(p != NULL) {
             id = p->getId();
+            p->setArgv(argv);
+            p->setArgc(argc);
             DEBUG(dbgProc, "Create process " << name << " with ID: " << id  << " and " << argc << " arguements");
             return id;
         }
@@ -77,10 +77,15 @@ int SYS_Join(int id)
 bool SYS_Exit(int exitCode)
 {
     Process* currentProcess = kernel->currentThread->process;
+
+    // this is use to avoid memory error
+    // because after remove a process from table, that's process is already deleted so we can't access its thread afterward
+    Thread* currentThread   = currentProcess->getThread();
+
     ASSERT(currentProcess != NULL);
     int processID = currentProcess->getId(); 
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " is exiting with code " << exitCode);
-    Process* parent = kernel->pTable->get(processID)->getParent();
+    Process* parent = currentProcess->getParent();
 
     // currently, a process will wait until it has no childs left in order to exit
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " is waiting until it has no child left");
@@ -95,7 +100,9 @@ bool SYS_Exit(int exitCode)
 
     } else {
 
-        // yay, no child left -> exiting
+        // turn off interrupt so that this process's parent can't exit before it
+        IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);  
+
         DEBUG(dbgProc, "Process " << currentProcess->getName() << " has no child left, exiting");
 
         // first remove itself from its parent children list
@@ -112,8 +119,10 @@ bool SYS_Exit(int exitCode)
         
         // remove process from pTable and finish thread
         DEBUG(dbgProc, "Remove process " << currentProcess->getName() << " ...");
-        kernel->pTable->remove(currentProcess->getId());
-        currentProcess->getThread()->Finish();
+        kernel->pTable->remove(processID);
+        kernel->interrupt->SetLevel(oldLevel);
+        currentThread->Finish();
+        ASSERTNOTREACHED();
         return true;
     }
     return false;

@@ -306,6 +306,18 @@ void ExceptionHandler(ExceptionType which)
             break;
         }
 
+        case SC_Argc: {
+            DEBUG(dbgSys, "Return arguments count to " << kernel->currentThread->process->getName());
+            kernel->machine->WriteRegister(2, kernel->currentThread->process->getArgc());
+            return advancePC();
+        }
+
+        case SC_Argv: {
+            DEBUG(dbgSys, "Return arguments address to " << kernel->currentThread->process->getName());
+            kernel->machine->WriteRegister(2, kernel->currentThread->process->getArgVirAddr());
+            return advancePC();
+        }
+
         case SC_ExecV: {
             int argc = kernel->machine->ReadRegister(4);
             // this is address of the memory block store address of first argument
@@ -325,13 +337,14 @@ void ExceptionHandler(ExceptionType which)
                     delete[] argv;
                     return advancePC();
                 }
+                DEBUG(dbgSys, "Argument " << i << " address: " << argAddr);
                 int count = readMemUntil(arg, argAddr, '\0', 200);
                 if (count != -1) {
                     // avoid wasting too much memory
                     // this will also be freed by process destructor
                     argv[i] = new char[count + 1];
                     memcpy(argv[i], arg, count);
-                    argv[count] = '\0';
+                    argv[i][count] = '\0';
                 }
                 else {
                     DEBUG(dbgSys, "Read memory error.");
@@ -341,6 +354,9 @@ void ExceptionHandler(ExceptionType which)
                     delete[] argv;
                     return advancePC();
                 }
+                
+                vAddr += 4; // move to next argument
+
             }
             int result = SYS_ExecV(argc, argv);
             kernel->machine->WriteRegister(2, result);
@@ -405,7 +421,7 @@ void ExceptionHandler(ExceptionType which)
             bzero(name, MAX_SIZE_NAME);
             int virAddr = kernel->machine->ReadRegister(4);
             int semval = kernel->machine->ReadRegister(5);
-            if (readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME)) {
+            if (readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME) != -1) {
                 Sema *semtest = new Sema;
                 semtest->Create(name, semval);
                 kernel->sTable->add(semtest);
@@ -453,7 +469,7 @@ void ExceptionHandler(ExceptionType which)
                         continue;
                     if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
                         kernel->sTable->get(i)->Signal();
-                }
+                    }
                 }
                 kernel->machine->WriteRegister(2, 0);
             }

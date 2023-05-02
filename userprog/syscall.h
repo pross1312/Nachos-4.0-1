@@ -43,9 +43,14 @@
 #define SC_Send 47
 #define SC_SReceive 48
 #define SC_SClose 49
+
 #define SC_CreateSemaphore 30
 #define SC_Wait 31
 #define SC_Signal 32
+
+#define SC_Argc 33
+#define SC_Argv 34
+
 
 
 #define SC_Add		39
@@ -217,6 +222,8 @@ int ThreadJoin(ThreadId id);
 void ThreadExit(int ExitCode);
 
 
+int Argc();
+char** Argv();
 
 #endif /* IN_ASM */
 

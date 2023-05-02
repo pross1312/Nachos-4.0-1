@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 
-int readMemUntil(char* buffer, int vAddr, char end, int size) {
+inline int readMemUntil(char* buffer, int vAddr, char end, int size) {
     int i = 0;
     for (; i < size; i++) {
         int ch;
@@ -18,7 +18,7 @@ int readMemUntil(char* buffer, int vAddr, char end, int size) {
     return i;
 }
 
-bool readFromMem(char* buffer, int size, int virAddr) {
+inline bool readFromMem(char* buffer, int size, int virAddr) {
     int idx = 0;
     // memcpy(buffer, kernel->machine->mainMemory + virAddr, size);
     int data = 0;
@@ -46,7 +46,7 @@ bool readFromMem(char* buffer, int size, int virAddr) {
     return true;
 }
 
-void advancePC() {
+inline void advancePC() {
     // advance program counter register
     kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
     kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(NextPCReg));
@@ -54,7 +54,7 @@ void advancePC() {
 }
 
 
-bool writeToMem(char* buffer, int size, int virAddr) {
+inline bool writeToMem(char* buffer, int size, int virAddr) {
     int count = 0;
     // memcpy(kernel->machine->mainMemory + virAddr, buffer, size);
     int data = 0;

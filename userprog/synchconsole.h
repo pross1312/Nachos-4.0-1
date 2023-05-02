@@ -29,7 +29,7 @@ public:
 
 private:
   ConsoleInput* consoleInput;	// the hardware keyboard
-  Semaphore* lock;			// only one reader at a time
+  Lock* lock;			// only one reader at a time
   Semaphore* waitFor;		// wait for callBack
 
   void CallBack();		// called when a keystroke is available
@@ -44,7 +44,7 @@ public:
 
 private:
   ConsoleOutput* consoleOutput;// the hardware display
-  Semaphore* lock;			// only one writer at a time
+  Lock* lock;			// only one writer at a time
   Semaphore* waitFor;		// wait for callBack
 
   void CallBack();		// called when more data can be written

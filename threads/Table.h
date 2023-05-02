@@ -19,10 +19,10 @@ public:
     Table(int n, char const* debugname)
     {
 
-        lock = new Semaphore(const_cast<char*>(debugname), 1);
+        lock = new Lock(const_cast<char*>(debugname));
         nEntry = n;
         count = 0;
-        table = new DATA * [n];
+        table = new DATA*[n];
         for (int i = 0; i < nEntry; i++)
             table[i] = NULL;
     }
@@ -33,15 +33,15 @@ public:
         for (int i = 0; i < nEntry; i++)
             if (table[i] != NULL)
                 delete table[i];
-        delete lock;
         delete[] table;
+        delete lock;
     }
 
 
     int add(DATA* p)
     {
         int result = -1;
-        lock->P();
+        lock->Acquire();
         for (int i = 0; i < nEntry; i++)
             if (table[i] == NULL) {
                 result = i;
@@ -49,7 +49,7 @@ public:
                 count++;
                 break;
             }
-        lock->V();
+        lock->Release();
         return result;
     }
     bool checkFreeSlot(){
@@ -65,14 +65,14 @@ public:
     {
         ASSERT(index >= 0 && index < nEntry && "Index out of range");
         bool removed = false;
-        lock->P();
+        lock->Acquire();
         if (table[index] != NULL) {
             delete table[index];
             table[index] = NULL;
             count--;
             removed = true;
         }
-        lock->V();
+        lock->Release();
         return removed;
     }
 
@@ -80,9 +80,9 @@ public:
     {
         ASSERT(index >= 0 && index < nEntry && "Index out of range")
             DATA* result = NULL;
-        lock->P();
+        lock->Acquire();
         result = table[index];
-        lock->V();
+        lock->Release();
         return result;
     }
 
@@ -95,7 +95,7 @@ public:
         return 1;
     }
 private:
-    Semaphore* lock;
+    Lock* lock;
     int nEntry;
     int count;
     DATA** table;

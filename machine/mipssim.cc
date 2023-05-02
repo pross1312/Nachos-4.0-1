@@ -55,7 +55,7 @@ public:
 
 void
 Machine::Run() {
-	Instruction* instr = new Instruction;  // storage for decoded instruction
+	Instruction instr;  // storage for decoded instruction
 
 	if (debug->IsEnabled('m')) {
 		cout << "Starting program in thread: " << kernel->currentThread->getName();
@@ -63,7 +63,7 @@ Machine::Run() {
 	}
 	kernel->interrupt->setStatus(UserMode);
 	for (;;) {
-		OneInstruction(instr);
+		OneInstruction(&instr);
 		kernel->interrupt->OneTick();
 		if (singleStep && (runUntilTime <= kernel->stats->totalTicks))
 			Debugger();
