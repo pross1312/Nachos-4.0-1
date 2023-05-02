@@ -192,7 +192,9 @@ int Close(OpenFileId id);
 
 int CreateSemaphore(char* name);
 
+int Wait(char*name);
 
+int Signal(char* name);
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program.
  *
