@@ -421,7 +421,16 @@ void ExceptionHandler(ExceptionType which)
             bzero(name, MAX_SIZE_NAME);
             int virAddr = kernel->machine->ReadRegister(4);
             int semval = kernel->machine->ReadRegister(5);
-            if (readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME) != -1) {
+            if (readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME)) {
+                 for (int i = 0; i < MAX_SEMAPHORE; i++) {
+                    if(!kernel->sTable->get(i)) {
+                        continue;
+                    }
+                    if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
+                        kernel->machine->WriteRegister(2, -1);
+                        return advancePC();
+                    }
+                }
                 Sema *semtest = new Sema;
                 semtest->Create(name, semval);
                 kernel->sTable->add(semtest);
@@ -441,11 +450,14 @@ void ExceptionHandler(ExceptionType which)
             int virAddr = kernel->machine->ReadRegister(4);
             if(readMemUntil(name, virAddr, '\0', MAX_SIZE_NAME)) {
                 for (int i = 0; i < MAX_SEMAPHORE; i++) {
-                    if(!kernel->sTable->get(i))
+                    if(!kernel->sTable->get(i)) {
                         continue;
+                    }
                     if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
+                        
                         kernel->sTable->get(i)->Wait();
-                }
+                        DEBUG(dbgSys, "Wait Exit ");
+                    }
                 }
                 kernel->machine->WriteRegister(2, 0);
             }
@@ -469,7 +481,7 @@ void ExceptionHandler(ExceptionType which)
                         continue;
                     if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
                         kernel->sTable->get(i)->Signal();
-                    }
+                }
                 }
                 kernel->machine->WriteRegister(2, 0);
             }
