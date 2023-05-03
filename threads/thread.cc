@@ -46,6 +46,7 @@ Thread::Thread(char* threadName) {
     }
     bzero(userRegisters, sizeof(int) * 40);
     space = NULL;
+    process = NULL;
 }
 
 //----------------------------------------------------------------------

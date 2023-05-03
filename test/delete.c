@@ -12,6 +12,4 @@ int main() {
         Write(buffer, count, Console_Output);
     }
 
-    Halt();
-
 }

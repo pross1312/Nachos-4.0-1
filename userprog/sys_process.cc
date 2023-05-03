@@ -53,77 +53,81 @@ int SYS_Exec(const char* name)
 
 int SYS_Join(int id) 
 {
+    // turn off interrupt so that, nothing terrible can happen
+    IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);
+
     Process* currentProcess = kernel->currentThread->process;
     if (id < 0 || id >= MAX_RUNNING_PROCESS) {
         DEBUG(dbgProc, "Invalid id " << id << ", ERROR: out of range");
         return -1;
     }
+
     if(!kernel->pTable->get(id)) {
         DEBUG(dbgProc, "No process with id " << id);
         return -1;
     }
+
+    Process* childProcess = kernel->pTable->get(id);
+
     int processID = currentProcess->getId();
-    if (kernel->pTable->get(id)->getParent()->getId() != processID) {
+    if (childProcess->getParent()->getId() != processID) {
         DEBUG(dbgProc, "Invalid joiner, parent id and current process id don't match");
         return -1;
     }
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " is waiting for " << kernel->pTable->get(id)->getName() << " to finish");
     currentProcess->JoinWait(id);
-    int exitCode = currentProcess->getExitCode(); // get joinee exit code (child exit code)
+    int exitCode = childProcess->getExitCode(); // get joinee exit code (child exit code)
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " continue");
+    currentProcess->removeChild(childProcess);
+    kernel->pTable->remove(id);
+    
+    (void)kernel->interrupt->SetLevel(oldLevel);
+    ASSERT(kernel->interrupt->getLevel() == IntOn);
     return exitCode;
 }
 
-bool SYS_Exit(int exitCode)
+void SYS_Exit(int exitCode)
 {
+
+    // turn off interrupt so that this process's parent can't exit before it
+    // it'll be turned on again after this process is remove entirely (by scheduler)
+    // ... there's maybe a deadlock occur
+    IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);  
+    (void)oldLevel; // interrupt will be turned on by scheduler i think...
+
     Process* currentProcess = kernel->currentThread->process;
 
-    // this is use to avoid memory error
-    // because after remove a process from table, that's process is already deleted so we can't access its thread afterward
+    // this is use to avoid possible memory error
     Thread* currentThread   = currentProcess->getThread();
 
     ASSERT(currentProcess != NULL);
-    int processID = currentProcess->getId(); 
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " is exiting with code " << exitCode);
     Process* parent = currentProcess->getParent();
 
-    // currently, a process will wait until it has no childs left in order to exit
-    DEBUG(dbgProc, "Process " << currentProcess->getName() << " is waiting until it has no child left");
-
-    currentProcess->ExitWait();
     
-
     if (parent == NULL) {
         DEBUG(dbgProc, "Init process exiting, stop machine");
         kernel->interrupt->Halt();
-        return true;
-
-    } else {
-
-        // turn off interrupt so that this process's parent can't exit before it
-        IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);  
-
-        DEBUG(dbgProc, "Process " << currentProcess->getName() << " has no child left, exiting");
-
-        // first remove itself from its parent children list
-        parent->removeChild(currentProcess);
-
-        // awake its joined parent if necessary
-        parent->JoinRelease(processID, exitCode);
-
-        // kernel->pTable->get(processID)->DecNumWait();
-        // this line will be called so that parent process can check if parent process can exit or not
-        // see implementation in process.cc for more info
-        DEBUG(dbgProc, "Call exit release for parent " << parent->getName());
-        parent->ExitRelease();
-        
-        // remove process from pTable and finish thread
-        DEBUG(dbgProc, "Remove process " << currentProcess->getName() << " ...");
-        kernel->pTable->remove(processID);
-        kernel->interrupt->SetLevel(oldLevel);
-        currentThread->Finish();
         ASSERTNOTREACHED();
-        return true;
     }
-    return false;
+
+    DEBUG(dbgProc, "Process " << currentProcess->getName() << " is checking for children issues");
+
+    // Exit function will move all the childs of this process to its parent process
+    // then set some exit code, state and exit
+    currentProcess->Exit(exitCode);
+    
+
+
+    DEBUG(dbgProc, "Process " << currentProcess->getName() << " has no child left, exiting");
+
+
+    // awake its joined parent if necessary
+    parent->JoinRelease(currentProcess->getId());
+
+   
+
+    // only finish this process thread but not delete its from the pTable
+    currentThread->Finish();
+    ASSERTNOTREACHED();
 }

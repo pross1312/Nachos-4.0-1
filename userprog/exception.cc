@@ -405,12 +405,9 @@ void ExceptionHandler(ExceptionType which)
             int exitCode = kernel->machine->ReadRegister(4);
             DEBUG(dbgSys, "Exiting process " << kernel->currentThread->process->getName() << " with code " << exitCode);
 
-            if (SYS_Exit(exitCode) == true)
-                kernel->machine->WriteRegister(2, 0);
-            else
-                kernel->machine->WriteRegister(2, -1);
             
-
+            SYS_Exit(exitCode);
+            ASSERTNOTREACHED();
             
             return advancePC();
         }

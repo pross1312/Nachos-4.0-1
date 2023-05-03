@@ -19,7 +19,7 @@ public:
     Table(int n, char const* debugname)
     {
 
-        lock = new Lock(const_cast<char*>(debugname));
+        mutex = new Semaphore(const_cast<char*>(debugname), 1);
         nEntry = n;
         count = 0;
         table = new DATA*[n];
@@ -34,14 +34,14 @@ public:
             if (table[i] != NULL)
                 delete table[i];
         delete[] table;
-        delete lock;
+        delete mutex;
     }
 
 
     int add(DATA* p)
     {
         int result = -1;
-        lock->Acquire();
+        mutex->P();
         for (int i = 0; i < nEntry; i++)
             if (table[i] == NULL) {
                 result = i;
@@ -49,7 +49,7 @@ public:
                 count++;
                 break;
             }
-        lock->Release();
+        mutex->V();
         return result;
     }
     bool checkFreeSlot(){
@@ -65,14 +65,14 @@ public:
     {
         ASSERT(index >= 0 && index < nEntry && "Index out of range");
         bool removed = false;
-        lock->Acquire();
+        mutex->P();
         if (table[index] != NULL) {
             delete table[index];
             table[index] = NULL;
             count--;
             removed = true;
         }
-        lock->Release();
+        mutex->V();
         return removed;
     }
 
@@ -80,22 +80,16 @@ public:
     {
         ASSERT(index >= 0 && index < nEntry && "Index out of range")
             DATA* result = NULL;
-        lock->Acquire();
+        mutex->P();
         result = table[index];
-        lock->Release();
+        mutex->V();
         return result;
     }
 
     int size() { return nEntry; }
     
-    bool checkID(SpaceId id){
-        if(table[id]==NULL){
-            return 0;
-        }
-        return 1;
-    }
 private:
-    Lock* lock;
+    Semaphore* mutex;
     int nEntry;
     int count;
     DATA** table;

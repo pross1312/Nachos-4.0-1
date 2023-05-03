@@ -15,13 +15,12 @@ Process::Process(Process *p, Thread *t, const char* name)
     this->main_thread  = t;
     this->fTable       = new Table<OpenFile>(MAX_OPEN_FILES, "open files management");
     this->children     = new List<Process*>;
-    this->lock         = new Lock("process synchronizer");
+    this->lock         = new Lock(const_cast<char*>("process synchronizer"));
     this->space        = t->space;
-    this->joinsem      = new Semaphore("join process semaphore", 0);
-    this->exitsem      = new Semaphore("exit process semaphore", 0);
+    this->joinsem      = new Semaphore(const_cast<char*>("join process semaphore"), 0);
     this->exitCode     = -1;
     this->joinid       = -1;
-    this->isExit       = 0;
+    this->isExited       = 0;
 
     this->argv         = NULL; // char**
     this->argc         = 0;
@@ -52,20 +51,21 @@ Process::Process(Process *p, Thread *t, const char* name)
 
 Process::~Process()
 {
-    // don't delete consoleinput and output because process didn't own it, the same with thread
-    // but for addrspace ...we will delete it
-    delete this->lock;
-    delete this->space;
-    this->main_thread->space = NULL;
-    delete this->fTable;
-    delete this->children;
-    delete this->joinsem;
-    delete this->exitsem;
-    if (this->argv != NULL) {
-        for (int i = 0; i < argc; i++) {
-            delete[] this->argv[i];
+    DEBUG(dbgProc, "Process " << name << " is removed");
+    // if isExited == true then these resources are deleted in Exit function already
+    if (isExited == false) {
+        delete this->space;
+        this->main_thread->space = NULL;
+        delete this->lock;
+        delete this->joinsem;
+        delete this->children; 
+        if (argc != 0 && argv != NULL) {
+            for (int i = 0; i < argc; i++)
+                delete[] argv[i];
+            delete[] argv;
         }
-        delete[] this->argv;
+        this->procConsoleIn = NULL;
+        this->procConsoleOut = NULL;
     }
     free(this->name);
 }
@@ -146,59 +146,32 @@ Process* Process::createProcess(Process* p, Thread* t, const char* name) {
     return NULL;
 }
 
-void Process::JoinWait(int joinid){
+void Process::JoinWait(int joinid) {
     if (joinid == -1) return;
     this->joinid = joinid;
     joinsem->P();
 }
 
-void Process::ExitWait(){
-    DEBUG(dbgProc, "Process " << name << " has " << children->NumInList() << " children left");
-    if(children->NumInList() > 0){
-        isExit = 1;
-        exitsem->P();
+void Process::JoinRelease(int joinid) {
+    // no need lock because it can only join 1 process at 1 time
+    // lock it and you will see terrible things happen...
+    if (this->joinid != joinid) {
+        DEBUG(dbgProc, "Parent " << this->name << " didn't join this process with id " << joinid);
+        return;
     }
-}
-// 1 -> 2 -> 3
-// 2: exit
-// 2 wait until all of its children exited
-
-
-void Process::ExitRelease() {
-    DEBUG(dbgProc, "Number of child left: " << children->NumInList() << " want to exit " << (int)isExit);
-    if (children->NumInList() == 0 && isExit == 1) {
-        DEBUG(dbgProc, "Exit release called by process " << kernel->currentThread->process->getName() << " for this process " << name);
-        exitsem->V();
-    }
-}
-
-
-void Process::JoinRelease(int joinid, int exitCode) {
-    // this means that parent isn't waiting for this child or something went horribly wrong
-    if (this->joinid != joinid) return; 
+    DEBUG(dbgProc, "Parent " << this->name << " is released by process with id " << joinid);
     this->joinid = -1;
-    this->exitCode = exitCode;
-    this->joinsem->V();
+    this->joinsem->V();   
 }
 
 void Process::initArgument() {
+    if (argv == NULL || argc == 0)
+        return;
     int vir_stack = kernel->machine->ReadRegister(StackReg);
     ASSERT(vir_stack % 4 == 0);
     int size_argument_memory = argc * 4;
-    // for (int i = 0; i < argc; i++) {
-    //     int n = strlen(argv[i]);
-    //     size_argument_memory += (n + (4 - n % 4));
-    // }
-    // int temp_stack = vir_stack - size_argument_memory;
 
     vir_arg_addr = vir_stack - argc * 4; 
-
-    // for (int i = 0; i < argc; i++) {
-    //     int n = strlen(argv[i]);
-    //     writeToMem(argv[i], n, temp_stack);
-    //     writeToMem((char*)&temp_stack, 4, vir_stack - ((argc - i) * 4));
-    //     temp_stack += n + (4 - n % 4);
-    // }
 
     for (int i = argc-1; i >= 0; i--) {
         int n_char = strlen(argv[i]);
@@ -211,5 +184,42 @@ void Process::initArgument() {
         writeToMem(argv[i], n_char, arg_addr);
     }
     kernel->machine->WriteRegister(StackReg, vir_stack - size_argument_memory);
+}
+
+// remove all exited child
+// if child has not exited, change its parent to the parent of this process
+// also, we will delete some of this process resources too (addrspace, lock, semaphore, ...) since we no longer need them
+// we will leave the name because its useful for debug
+void Process::Exit(int exit)
+{
+    while (children->NumInList() > 0) {
+        Process* child = children->RemoveFront();
+        if (child->isExited == true) {
+            DEBUG(dbgProc, "Child process " << child->getName() << " is already exited, remove it from pTable");
+            ASSERT(kernel->pTable->remove(child->pid));
+        }
+        else {
+            DEBUG(dbgProc, "Child process " << child->getName() << " hasn't exited yet, change parrent occur, new parent " << this->parent->getName());
+            child->parent = this->parent;
+            this->parent->addChild(child);
+        }
+
+    }
+    isExited = true;
+    exitCode = exit;
+    
+    DEBUG(dbgProc, "Free unnecessary resources for exited process");
+    delete this->space;
+    this->main_thread->space = NULL;
+    delete this->lock;
+    delete this->joinsem;
+    delete this->children; 
+    if (argc != 0 && argv != NULL) {
+        for (int i = 0; i < argc; i++)
+            delete[] argv[i];
+        delete[] argv;
+    }
+    this->procConsoleIn = NULL;
+    this->procConsoleOut = NULL;
 }
 

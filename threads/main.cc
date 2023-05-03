@@ -237,7 +237,7 @@ main(int argc, char** argv) {
             cout << "Partial usage: nachos [-l] [-D]\n";
 #endif //FILESYS_STUB
         }
-
+    
     }
     debug = new Debug(debugArg);
 
@@ -288,7 +288,6 @@ main(int argc, char** argv) {
             Process* init = Process::createProcess(NULL, kernel->currentThread, "initProcess");
             ASSERTNOTREACHED();
         }
-        delete space;
     }
 
     // If we don't run a user program, we may get here.

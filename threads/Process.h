@@ -25,18 +25,13 @@ class Process
 public:
     ~Process();
 
-    // void         setState(ProcessState s) { state = s; }
     const char*  getName()     { return name; }
     int          getId()       { return pid; }
-    // ProcessState getState()    { return state;  }
     Thread*      getThread()   { return main_thread;}
     Process*     getParent()   { return parent;}
     int          getExitCode() { return exitCode;}
 
-    // void       DecNumWait();
-    void       ExitRelease();
-    void       JoinRelease(int joinid, int joinexitcode);
-    void       ExitWait();
+    void       JoinRelease(int joinid);
     void       JoinWait(int joinid);
     void       addChild(Process* child);
     void       removeChild(Process* child);
@@ -44,6 +39,10 @@ public:
     int        addOpenFile(OpenFile* file);
     bool       isOpenFile(const char* name);
     bool       closeOpenFile(int index);
+    void       Exit(int code);
+    void       initArgument();
+
+    bool       exited()                    { return isExited; } 
     char**     getArgv()                   { return argv; }
     void       setArgv(char** argv)        { this->argv = argv; }
     int        getArgc()                   { return argc; }
@@ -54,10 +53,10 @@ public:
     SynchConsoleOutput* getConsoleOutput() { return procConsoleOut; }
 
     static Process* createProcess(Process* p, Thread* t, const char* name);
-    void initArgument();
+    friend Process* createProcess(Process* p, Thread* t, const char* name);
+
 private:
     Process(Process* p, Thread* t, const char* name);
-    friend Process* createProcess(Process* p, Thread* t, const char* name);
     static void start(Process*); // use to start process by fork
 
 
@@ -67,23 +66,22 @@ private:
     Table<OpenFile>* fTable; 
 
     int exitCode;
+
     int pid;
-    // ProcessState state;
     char* name;
     AddrSpace* space;
     Thread* main_thread;
     Process* parent;
     List<Process*>* children;
     Semaphore* joinsem;
-    SpaceId joinid;
+    int joinid;
     int vir_arg_addr; // this is address that point to the argv array
-    // int numwait;
-    int isExit;
+    
+    bool isExited;
     
     char** argv;
     int argc;
 
-    Semaphore* exitsem;
     Lock* lock;
 };
 

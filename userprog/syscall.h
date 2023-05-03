@@ -190,7 +190,7 @@ int Seek(int position, OpenFileId id);
 int Close(OpenFileId id);
 
 
-int CreateSemaphore(char* name);
+int CreateSemaphore(char* name, int val);
 
 int Wait(char*name);
 

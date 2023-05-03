@@ -28,5 +28,5 @@ int main() {
     }
     Close(file_a);
     Close(file_b);
-    Halt();
+    return 0;
 }

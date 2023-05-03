@@ -1,7 +1,7 @@
 #include "../userprog/syscall.h"
 #define MAX_IP 15
 #define PORT 8080
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 200
 #define client "Client: "
 int main() {
     int sock[4];
@@ -31,7 +31,8 @@ int main() {
             int count_w = 1;
             Write(client, 8, Console_Output);
             tmp = ConsoleReadLine(buffer, BUFFER_SIZE);
-            if ((count_w = Write(buffer, tmp, sock[i])) == 0)
+            count_w = Write(buffer, tmp, sock[i]);
+            if (count_w == 0 || count_w == -1)
                 break;
             Write("Server: ", 9, Console_Output);
             Write(buffer, Read(buffer, BUFFER_SIZE, sock[i]), Console_Output);

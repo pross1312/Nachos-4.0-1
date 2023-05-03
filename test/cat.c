@@ -2,15 +2,23 @@
 #define MAX_ARR 100
 
 int main() {
+    int argc = Argc();
+    char** argv = Argv();
     char buffer[MAX_OPEN_FILE_NAME];
-    int count_console;
-    int count;
+    int count_console = 10;
+    int count = 10;
     OpenFileId file;
-    if (Write("File name: ", 12, Console_Output) == -1) {
-        Exit(2);
+    int i = 0;
+    if (argc == 0) {
+        if (Write("File name: ", 12, Console_Output) == -1) {
+            Exit(2);
+        }
+        count_console = ConsoleReadLine(buffer, MAX_OPEN_FILE_NAME);
+        file = Open(buffer, READ_ONLY);
     }
-    count_console = ConsoleReadLine(buffer, MAX_OPEN_FILE_NAME);
-    file = Open(buffer, READ_ONLY);
+    else {
+        file = Open(argv[1], READ_ONLY);
+    }
 
     count = MAX_ARR;
     while (count == MAX_ARR) {
@@ -23,5 +31,5 @@ int main() {
 
     Close(file);
 
-    Halt();
+    Exit(0);
 }

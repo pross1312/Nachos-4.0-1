@@ -11,5 +11,5 @@ int main() {
         Write("Can't create file ", 19, Console_Output);
         Write(buffer, count, Console_Output);
     }
-    Halt();
+    Exit(0);
 }
