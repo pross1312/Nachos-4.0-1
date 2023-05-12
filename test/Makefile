@@ -112,7 +112,7 @@ ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments test cat delete concatenate copy createfile echoclient fileclient file0 file1 file2 makeHydro makeWater makeOxy
+PROGRAMS = add halt shell matmult sort segments test cat delete concatenate copy createfile echoclient fileclient file0 file1 file2 makeHydro makeWater makeOxy Write
 endif
 
 all: $(PROGRAMS)
@@ -127,6 +127,12 @@ makeWater: makeWater.o start.o
 	$(LD) $(LDFLAGS) start.o makeWater.o -o makeWater.coff
 	$(COFF2NOFF) makeWater.coff makeWater
 	
+Write.o: Write.c
+	$(CC) $(CFLAGS) -c Write.c
+Write: Write.o start.o
+	$(LD) $(LDFLAGS) start.o Write.o -o Write.coff
+	$(COFF2NOFF) Write.coff Write
+
 makeOxy.o: makeOxy.c
 	$(CC) $(CFLAGS) -c makeOxy.c
 makeOxy: makeOxy.o start.o

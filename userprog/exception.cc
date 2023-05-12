@@ -306,13 +306,13 @@ void ExceptionHandler(ExceptionType which)
             break;
         }
 
-        case SC_Argc: {
+        case SC_GetArgc: {
             DEBUG(dbgSys, "Return arguments count to " << kernel->currentThread->process->getName());
             kernel->machine->WriteRegister(2, kernel->currentThread->process->getArgc());
             return advancePC();
         }
 
-        case SC_Argv: {
+        case SC_GetArgv: {
             DEBUG(dbgSys, "Return arguments address to " << kernel->currentThread->process->getName());
             kernel->machine->WriteRegister(2, kernel->currentThread->process->getArgVirAddr());
             return advancePC();
@@ -454,9 +454,12 @@ void ExceptionHandler(ExceptionType which)
                         
                         kernel->sTable->get(i)->Wait();
                         DEBUG(dbgSys, "Wait Exit ");
+                        kernel->machine->WriteRegister(2, 0);
+                        return advancePC();
                     }
                 }
-                kernel->machine->WriteRegister(2, 0);
+                DEBUG(dbgSys, "Can't find semaphore with name " << name);
+                kernel->machine->WriteRegister(2, -1);
             }
             
             else {
@@ -466,6 +469,7 @@ void ExceptionHandler(ExceptionType which)
             }
             return advancePC();
         }
+
         case SC_Signal:
         {
             DEBUG(dbgSys, "Signal ");
@@ -478,18 +482,41 @@ void ExceptionHandler(ExceptionType which)
                         continue;
                     if (strncmp(kernel->sTable->get(i)->GetName(), name, MAX_SIZE_NAME) == 0) {
                         kernel->sTable->get(i)->Signal();
+                        kernel->machine->WriteRegister(2, 0);
+                        return advancePC();
+                    }
                 }
-                }
-                kernel->machine->WriteRegister(2, 0);
+                DEBUG(dbgSys, "Can't find semaphore with name " << name);
+                kernel->machine->WriteRegister(2, -1);
             }
             
             else {
                 DEBUG(dbgSys, "Read Error. ");
                 kernel->machine->WriteRegister(2, -1);
-
             }
             return advancePC();
         }
+
+        case SC_SizeOf: {
+            int vAddr = kernel->machine->ReadRegister(4);
+            int count = 0;
+            int ch = -1;
+            DEBUG(dbgSys, "Get size of array start from " << vAddr); 
+            while (true) {
+                if (kernel->machine->ReadMem(vAddr + count, 1, &ch) == false) {
+                    DEBUG(dbgSys, "Read memory error at " << vAddr);
+                    count = -1;
+                }
+                if (ch == '\0') {
+                    DEBUG(dbgSys, "Array has size " << count);
+                    break;
+                }
+                count++;
+            }
+            kernel->machine->WriteRegister(2, count);
+            return advancePC();
+        }
+
         default:
             cerr << "Unexpected system call " << type << "\n";
             break;

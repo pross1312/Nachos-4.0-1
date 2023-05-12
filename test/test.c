@@ -1,30 +1,17 @@
 #include "../userprog/syscall.h"
 
-
-
 int main() {
-    int id = SocketTCP();
-    if (id == -1)
-        Exit(1);    
-    if (Connect(id, "127.0.0.1", 9000) == -1) {
-        return 1;
-    }
+    int a = 0;
+    int b = 0;
+    char* argv1[] = {"Write", "Hello from file 1"};
+    char* argv2[] = {"Write", "Hello from file 2"};
 
-
-    while (1) {
-        char buffer[100];
-        int count = ConsoleReadLine(buffer, 100);
-        if (count <= 0) {
-            Close(id);
-            Write("Close connection.\n", 18, Console_Output);
-            break;
-        }
-        Write(buffer, count, id);
-        count = Read(buffer, 99, id);
-        Write("Sever sent: ", 12, Console_Output);
-        Write(buffer, count, Console_Output);
-    }
+    CreateSemaphore("console_out", 1); 
+    a = ExecV(2, argv1);
+    b = ExecV(2, argv2);
     
-    Close(id);
-    return;
+    Join(a);
+    Join(b);
+     
+    Exit(0);
 }   

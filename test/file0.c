@@ -3,11 +3,11 @@
 int main()
 {
     int count = 0;
-    int fileid = Open("Output.txt", READ_WRITE);
     SpaceId i = Exec("file1");
+    
     Join(i);
-    while (count < 1000) {
-        Write("file0\n", 6, fileid);
+    while (count < 20) {
+        Write("file0\n", 6, Console_Output);
         count++;
     }
     Exit(0);

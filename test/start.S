@@ -231,6 +231,53 @@ ConsoleReadLine:
 	j	$31
 	.end ConsoleReadLine
 
+	.globl CreateSemaphore
+	.ent	CreateSemaphore
+CreateSemaphore:
+	addiu $2,$0,SC_CreateSemaphore
+	syscall
+	j	$31
+	.end CreateSemaphore
+
+	.globl Wait
+	.ent	Wait
+Wait:
+	addiu $2,$0,SC_Wait
+	syscall
+	j	$31
+	.end Wait
+
+	.globl Signal
+	.ent	Signal
+Signal:
+	addiu $2,$0,SC_Signal
+	syscall
+	j	$31
+	.end Signal
+
+	.globl GetArgc
+	.ent	GetArgc
+GetArgc:
+	addiu $2,$0,SC_GetArgc
+	syscall
+	j	$31
+	.end GetArgc
+
+	.globl GetArgv
+	.ent	GetArgv
+GetArgv:
+	addiu $2,$0,SC_GetArgv
+	syscall
+	j	$31
+	.end GetArgv
+
+	.globl SizeOf
+	.ent	SizeOf
+SizeOf:
+	addiu $2,$0,SC_SizeOf
+	syscall
+	j	$31
+	.end SizeOf
 
 /* dummy function to keep gcc happy */
         .globl  __main

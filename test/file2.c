@@ -3,9 +3,8 @@
 int main()
 {
     int count = 0;
-    OpenFileId f = Open("output.txt", READ_WRITE);
     while (count < 20) {
-        Write("File2\n", 6, f);
+        Write("File2\n", 6, Console_Output);
         count++;
     }
     Exit(3);

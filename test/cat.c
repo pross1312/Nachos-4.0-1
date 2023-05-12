@@ -2,8 +2,8 @@
 #define MAX_ARR 100
 
 int main() {
-    int argc = Argc();
-    char** argv = Argv();
+    int argc = GetArgc();
+    char** argv = GetArgv();
     char buffer[MAX_OPEN_FILE_NAME];
     int count_console = 10;
     int count = 10;

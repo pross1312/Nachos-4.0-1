@@ -48,8 +48,9 @@
 #define SC_Wait 31
 #define SC_Signal 32
 
-#define SC_Argc 33
-#define SC_Argv 34
+#define SC_GetArgc 33
+#define SC_GetArgv 34
+#define SC_SizeOf 35
 
 
 
@@ -78,6 +79,7 @@
  /* Stop Nachos, and print out performance stats */
 void Halt();
 
+int SizeOf(char* arr);
 
 int ConsoleReadLine(char* buffer, int maxSize);
 /*
