@@ -4,34 +4,43 @@
 // DON'T free the memory allocated for arguments, it will be done when this process is deleted
 int SYS_ExecV(int argc, char** argv) 
 {
+    // turn off interrupt so that process can create successfully before switch to another thread 
+    IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);
+
     if (argc < 1 || argv == NULL) {
         DEBUG(dbgProc, "Can't use ExecV process with no arguments");
         return -1;
     }
     AddrSpace* space = new AddrSpace;
     char* name = argv[0];
+    int id = -1;
     if (space->Load(const_cast<char*>(name))) {
         Thread* t = new Thread("User created process");
         t->space = space;
         Process* p = Process::createProcess(kernel->currentThread->process, t, name);
-        int id = -1;
         if(p != NULL) {
             id = p->getId();
             p->setArgv(argv);
             p->setArgc(argc);
             DEBUG(dbgProc, "Create process " << name << " with ID: " << id  << " and " << argc << " arguements");
-            return id;
         }
-        DEBUG(dbgProc, "Unable to create process " << name);
+        else {
+            DEBUG(dbgProc, "Unable to create process " << name);
+        }
     }
     else {
         DEBUG(dbgProc, "Can't load AddrSpace\n");
     }
-    return -1; 
+
+    (void)kernel->interrupt->SetLevel(oldLevel); // turn back
+    return id; 
 }
 
 int SYS_Exec(const char* name)
 {
+    // turn off interrupt so that process can create successfully before switch to another thread 
+    IntStatus oldLevel = kernel->interrupt->SetLevel(IntOff);
+
     AddrSpace* space = new AddrSpace;
     if (space->Load(const_cast<char*>(name))) {
         Thread* t = new Thread("User created process");
@@ -43,11 +52,14 @@ int SYS_Exec(const char* name)
             DEBUG(dbgProc, "Create process " << name << " with ID: " << id);
             return id;
         }
-        DEBUG(dbgProc, "Unable to create process " << name);
+        else {
+            DEBUG(dbgProc, "Unable to create process " << name);
+        }
     }
     else {
         DEBUG(dbgProc, "Can't load AddrSpace\n");
     }
+    (void)kernel->interrupt->SetLevel(oldLevel);
     return -1;
 }
 
@@ -75,7 +87,11 @@ int SYS_Join(int id)
         return -1;
     }
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " is waiting for " << kernel->pTable->get(id)->getName() << " to finish");
-    currentProcess->JoinWait(id);
+
+    if (childProcess->exited() == false) {
+        currentProcess->JoinWait(id);
+    }
+
     int exitCode = childProcess->getExitCode(); // get joinee exit code (child exit code)
     DEBUG(dbgProc, "Process " << currentProcess->getName() << " continue");
     currentProcess->removeChild(childProcess);

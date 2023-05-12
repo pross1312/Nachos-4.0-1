@@ -146,15 +146,15 @@ Process* Process::createProcess(Process* p, Thread* t, const char* name) {
     return NULL;
 }
 
+// no need lock because it can only join 1 process at 1 time
+// lock it and you will see terrible things happen...
 void Process::JoinWait(int joinid) {
-    if (joinid == -1) return;
+    Process* child = kernel->pTable->get(joinid);
     this->joinid = joinid;
     joinsem->P();
 }
 
 void Process::JoinRelease(int joinid) {
-    // no need lock because it can only join 1 process at 1 time
-    // lock it and you will see terrible things happen...
     if (this->joinid != joinid) {
         DEBUG(dbgProc, "Parent " << this->name << " didn't join this process with id " << joinid);
         return;
