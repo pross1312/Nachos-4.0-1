@@ -518,13 +518,15 @@ void ExceptionHandler(ExceptionType which)
         }
 
         default:
-            cerr << "Unexpected system call " << type << "\n";
-            break;
+            DEBUG(dbgSys, "Unexpected system call " << type);
+            SYS_Exit(1);
+            ASSERTNOTREACHED();
         }
         break;
     default:
-        cerr << "Unexpected user mode exception " << (int)which << "\n";
-        break;
+        DEBUG(dbgSys, "Unexpected user mode exception " << (int)which);
+        SYS_Exit(1);
+        ASSERTNOTREACHED(); 
     }
     ASSERTNOTREACHED();
 }
