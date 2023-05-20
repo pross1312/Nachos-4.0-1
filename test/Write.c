@@ -7,7 +7,7 @@ int main() {
     int size = SizeOf(argv[1]);
     if (argc != 2)
         Exit(1);
-    while (count < 10) {
+    while (count < 100) {
         Wait("console_out");
 
         Write(argv[1], size, Console_Output);
